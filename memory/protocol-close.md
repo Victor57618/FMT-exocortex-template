@@ -21,27 +21,26 @@
 
 ## Алгоритм Close
 
-0. **Pull** → `cd DS-strategy && git pull --rebase`
-1. **Knowledge Extraction** → прочитай и выполни `roles/extractor/prompts/session-close.md`:
+0. **Pull** → `cd DS-my-strategy && git pull --rebase`
+1. **Knowledge Extraction** → прочитай и выполни `DS-IT-systems/DS-ai-systems/extractor/prompts/session-close.md`:
    - Собрать отложенные captures + проверить пропущенные
    - Классифицировать → маршрутизировать → формализовать → валидировать
-   - **MCP-проверка:** `knowledge-mcp search` → нет дубликатов в Pack
    - Показать Extraction Report → получить одобрение
    - Применить одобренные (accept → Pack/CLAUDE.md/memory)
-2. Обновить MEMORY.md (статус РП)
+2. Обновить MEMORY.md (статус РП) + `DS-strategy/docs/WP-REGISTRY.md` (если статус РП изменился)
 3. Зафиксировать: что сделано, что осталось
 4. Закоммитить (с подтверждением)
-5. Обновить `DS-strategy/current/Plan W{N}...` (статусы РП)
-6. Синхронизировать backup: `memory/ + CLAUDE.md → DS-strategy/exocortex/`
+5. Обновить `DS-my-strategy/current/Plan W{N}...` (статусы РП)
+6. Синхронизировать backup: `memory/ + CLAUDE.md → DS-my-strategy/exocortex/`
 7. **WP Context File:**
-   - in_progress + ≥2 сессий → обновить `DS-strategy/inbox/WP-{N}-{slug}.md`
+   - in_progress + ≥2 сессий → обновить `DS-my-strategy/inbox/WP-{N}-{slug}.md`
    - done → `mv inbox/WP-{N}-*.md → archive/wp-contexts/` (сразу, не откладывая)
    - Проверка: РП есть в WeekPlan и MEMORY.md? Нет → добавить
 8. **Незавершённое и идеи:**
    - Недоделка по РП → context file (секция «Осталось»)
    - Идея развития системы → `<repo>/MAPSTRATEGIC.md`
-   - Новая задача → `DS-strategy/inbox/captures.md` или fleeting-notes.md
-   - Зерно для поста → `DS-strategy/drafts/draft-list.md`
+   - Новая задача → `DS-my-strategy/inbox/captures.md` или fleeting-notes.md
+   - Зерно для поста → `DS-my-strategy/drafts/draft-list.md`
 9. **Draft-list проверка:**
    - Были captures в Pack? → Предложить: «Pack обогащён — добавить черновик для поста?»
    - Обновить draft-list.md если создавались черновики в этой сессии
@@ -64,6 +63,7 @@
 **Сделано:** [итог]
 **Captures:** [N → куда]
 **Git:** закоммичено + запушено ✅
+**Деплой бота:** залито на `pilot` ✅ / на `new-architecture` не заливалось
 **Осталось:** ничего / [что]
 ```
 
@@ -77,14 +77,13 @@
 
 - [ ] Все изменения закоммичены и запушены
 - [ ] MEMORY.md обновлён (статусы РП)
-- [ ] DS-strategy/current/Plan обновлён
+- [ ] DS-my-strategy/current/Plan обновлён
 - [ ] Captures применены
-- [ ] **MCP-проверка:** `knowledge-mcp search` → captures не дублируют существующее в Pack
 - [ ] **Selective Reindex:** Pack изменены? → `selective-reindex.sh`
 - [ ] **Repo CLAUDE.md:** feat-коммиты → новые правила для CLAUDE.md репо?
 - [ ] **WP context:** коммиты реализуют пункт WP-плана → пункт done?
 - [ ] **Draft-list:** Pack обогащён → предложить черновик? Черновики из сессии → draft-list обновлён?
-- [ ] Backup → DS-strategy/exocortex/ синхронизирован
+- [ ] Backup → DS-my-strategy/exocortex/ синхронизирован
 - [ ] Context file: done → `mv inbox/WP-*.md → archive/wp-contexts/` (сразу при Close)
 - [ ] Отчёт Close сформирован
 - [ ] WP Context File создан/обновлён при ПЕРВОМ Close
