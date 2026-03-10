@@ -486,6 +486,8 @@ bash update.sh
 
 ## Безопасность и приватность
 
+> Полная политика данных: [DATA-POLICY.md](DATA-POLICY.md) | Каноническое описание: [DP.D.035](https://github.com/TserenTserenov/PACK-digital-platform/blob/main/pack/digital-platform/01-domain-contract/DP.D.035-data-policy.md)
+
 IWE работает преимущественно локально. Вот что нужно знать о безопасности.
 
 ### Что остаётся локально

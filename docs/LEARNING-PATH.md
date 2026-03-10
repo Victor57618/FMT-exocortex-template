@@ -32,7 +32,7 @@
 
 > **Терминология:** IWE = интеллектуальная рабочая среда, описываемая через 4 архитектурных вида: системы, описания, роли, артефакты (§ 1.2). Экзокортекс = описания и инструкции внутри IWE (CLAUDE.md + memory/). Подробнее: [DP.IWE.001](https://github.com/TserenTserenov/PACK-digital-platform/blob/main/pack/digital-platform/02-domain-entities/DP.IWE.001-intelligent-working-environment.md).
 
-> **Установка:** [SETUP-GUIDE.md](SETUP-GUIDE.md) | **Быстрая справка:** [IWE-HELP.md](IWE-HELP.md) | **Принципы vs навыки:** [principles-vs-skills.md](principles-vs-skills.md)
+> **Установка:** [SETUP-GUIDE.md](SETUP-GUIDE.md) | **Политика данных:** [DATA-POLICY.md](DATA-POLICY.md) | **Быстрая справка:** [IWE-HELP.md](IWE-HELP.md) | **Принципы vs навыки:** [principles-vs-skills.md](principles-vs-skills.md)
 >
 > Ссылки `./` — файлы в этом репо. Ссылки `github.com/...` — другие репозитории.
 

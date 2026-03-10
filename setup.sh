@@ -183,7 +183,24 @@ if $DRY_RUN; then
     exit 0
 fi
 
-read -p "Continue? (y/n) " -n 1 -r
+# === Data Policy acceptance ===
+echo "Data Policy"
+echo "  IWE collects and processes data as described in docs/DATA-POLICY.md"
+echo "  Summary: profile, sessions, and learning data are stored on the platform (Neon DB)."
+echo "  Your personal/ files stay local. Claude API receives prompts + profile context."
+echo "  You can view your data (/mydata) and delete it at any time."
+echo ""
+echo "  Full policy: docs/DATA-POLICY.md"
+echo ""
+read -p "I have read and agree to the Data Policy (y/n): " -n 1 -r
+echo ""
+if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    echo "Setup cancelled. Please review docs/DATA-POLICY.md first."
+    exit 0
+fi
+echo ""
+
+read -p "Continue with setup? (y/n) " -n 1 -r
 echo ""
 [[ ! $REPLY =~ ^[Yy]$ ]] && exit 1
 

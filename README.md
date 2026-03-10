@@ -27,6 +27,7 @@
 - В понедельник — Стратег готовит черновик недельного плана, вы обсуждаете его на сессии стратегирования
 
 > **Первая установка?** [SETUP-GUIDE.md](docs/SETUP-GUIDE.md) — пошаговое руководство от чистого компьютера (30-60 мин).
+> **Политика данных:** [DATA-POLICY.md](docs/DATA-POLICY.md) — какие данные собираются, где хранятся, как удалить.
 > **Хочешь понять, что за этим стоит?** [LEARNING-PATH.md](docs/LEARNING-PATH.md) — полный путь изучения: принципы, протоколы, агенты, Pack, SOTA и где всё найти.
 > **Быстрая справка / FAQ:** [IWE-HELP.md](docs/IWE-HELP.md) — то же, что знает бот @aist_me_bot.
 > **Почему принципы, а не навыки?** [principles-vs-skills.md](docs/principles-vs-skills.md) — аргументация и генеративная иерархия.
@@ -117,11 +118,12 @@ bash setup.sh --core
 <summary>Что делает setup.sh</summary>
 
 1. Проверяет prerequisites (git, gh, claude)
-2. Заменяет 7 плейсхолдеров (`{{GITHUB_USER}}`, `{{WORKSPACE_DIR}}` и др.)
-3. Копирует `CLAUDE.md` → корень рабочей директории
-4. Копирует `memory/*.md` → `~/.claude/projects/.../memory/`
-5. Устанавливает launchd-агентов для Стратега
-6. Создаёт `DS-strategy/` — приватный репозиторий для стратегирования
+2. Показывает политику данных и запрашивает согласие ([DATA-POLICY.md](docs/DATA-POLICY.md))
+3. Заменяет 7 плейсхолдеров (`{{GITHUB_USER}}`, `{{WORKSPACE_DIR}}` и др.)
+4. Копирует `CLAUDE.md` → корень рабочей директории
+5. Копирует `memory/*.md` → `~/.claude/projects/.../memory/`
+6. Устанавливает launchd-агентов для Стратега
+7. Создаёт `DS-strategy/` — приватный репозиторий для стратегирования
 
 Посмотреть без выполнения: `bash setup.sh --dry-run`
 </details>
@@ -385,8 +387,13 @@ FMT-exocortex-template/
 │
 ├── docs/                            # Справочная документация
 │   ├── SETUP-GUIDE.md               # Пошаговое руководство установки (от нуля)
+│   ├── LEARNING-PATH.md             # Путь изучения: принципы, протоколы, SOTA
 │   ├── IWE-HELP.md                  # Справочник IWE для бота (FAQ, глоссарий)
-│   └── LEARNING-PATH.md             # Путь изучения: принципы, протоколы, SOTA
+│   ├── DATA-POLICY.md               # Политика данных IWE
+│   ├── principles-vs-skills.md      # Почему принципы, а не навыки
+│   └── adr/                         # Architecture Decision Records
+│       ├── ADR-001-setup-in-template.md
+│       └── ADR-002-modular-roles.md
 │
 ├── roles/                          # Роли (точка расширения)
 │   ├── strategist/                  # Роль: Стратег (R1)
@@ -439,6 +446,7 @@ FMT-exocortex-template/
 4. **WP Gate** — нетривиальная работа начинается с проверки плана. Нет в плане = не делаем
 5. **Open → Work → Close** — каждая сессия: открытие (что делаем) → работа (с фиксацией знаний) → закрытие (результат зафиксирован)
 6. **Безопасность по дизайну** — секреты вне git, per-user изоляция, приватные репозитории, CLI permission whitelist. Подробнее: [LEARNING-PATH.md § 8.5](docs/LEARNING-PATH.md)
+7. **Прозрачность данных** — пользователь знает какие данные собираются, где хранятся, как удалить. Согласие при установке. Политика: [DATA-POLICY.md](docs/DATA-POLICY.md)
 
 > Подробное описание каждого принципа, протокола и агента — в [LEARNING-PATH.md](docs/LEARNING-PATH.md).
 
@@ -465,7 +473,7 @@ A: MCP (Model Context Protocol) — протокол, через который 
 A: Pack — это формализованная область знаний (паспорт предметной области). Например, PACK-product-management или PACK-machine-learning. Pack — единственный source-of-truth для доменного знания.
 
 **Q: Безопасны ли мои данные?**
-A: Три зоны защиты: (1) **Локальная** — CLAUDE.md и memory/ на вашем компьютере, защищены на уровне ОС; (2) **GitHub** — DS-strategy и Pack — приватные репозитории на вашем аккаунте; (3) **Платформа** — per-user OAuth, изоляция данных пользователей. Anthropic API [не использует данные для обучения](https://www.anthropic.com/policies/privacy-policy). Секреты (API-ключи, токены) хранятся в `~/.config/`, не в git. Подробнее: [LEARNING-PATH.md § 8.5](docs/LEARNING-PATH.md#85-безопасность-в-iwe).
+A: Три зоны защиты: (1) **Локальная** — CLAUDE.md и memory/ на вашем компьютере, защищены на уровне ОС; (2) **GitHub** — DS-strategy и Pack — приватные репозитории на вашем аккаунте; (3) **Платформа** — per-user OAuth, изоляция данных пользователей. Anthropic API [не использует данные для обучения](https://www.anthropic.com/policies/privacy-policy). Секреты (API-ключи, токены) хранятся в `~/.config/`, не в git. Подробная политика данных: [DATA-POLICY.md](docs/DATA-POLICY.md). Подробнее о безопасности: [LEARNING-PATH.md § 8.5](docs/LEARNING-PATH.md#85-безопасность-в-iwe).
 
 **Q: Claude видит мои пароли и API-ключи?**
 A: Нет. Claude Code видит только файлы в рабочей директории и исполняет только команды из whitelist (`.claude/settings.local.json`). Секреты хранятся в `~/.config/` и environment variables — за пределами рабочего пространства.
