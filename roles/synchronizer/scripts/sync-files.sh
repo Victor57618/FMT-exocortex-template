@@ -5,8 +5,8 @@
 #   sync-files.sh <repo-path> <file1> [file2] ...
 #
 # Примеры:
-#   sync-files.sh ~/Github/DS-strategy inbox/fleeting-notes.md
-#   sync-files.sh ~/Github/DS-strategy inbox/fleeting-notes.md inbox/captures.md
+#   sync-files.sh ~/IWE/DS-strategy inbox/fleeting-notes.md
+#   sync-files.sh ~/IWE/DS-strategy inbox/fleeting-notes.md inbox/captures.md
 #
 # Скрипт делает git fetch и обновляет ТОЛЬКО указанные файлы,
 # не трогая остальные локальные изменения.

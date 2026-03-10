@@ -150,7 +150,7 @@ fi
 
 HOME_DIR="$HOME"
 
-# Compute Claude project slug: /Users/alice/Github → -Users-alice-Github
+# Compute Claude project slug: /Users/alice/IWE → -Users-alice-IWE
 CLAUDE_PROJECT_SLUG="$(echo "$WORKSPACE_DIR" | tr '/' '-')"
 
 echo ""

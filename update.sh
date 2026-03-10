@@ -11,14 +11,13 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # --- Определить рабочую директорию ---
-# Если скрипт в fork-е экзокортекса (FMT-exocortex)
+# Скрипт должен запускаться из корня форка экзокортекса
 if [ -f "$SCRIPT_DIR/CLAUDE.md" ] && [ -d "$SCRIPT_DIR/memory" ]; then
     EXOCORTEX_DIR="$SCRIPT_DIR"
-elif [ -d "$HOME/Github/FMT-exocortex" ]; then
-    EXOCORTEX_DIR="$HOME/Github/FMT-exocortex"
 else
     echo "ERROR: Cannot find exocortex directory."
-    echo "Run this script from your exocortex fork root or ~/Github/FMT-exocortex/"
+    echo "Run this script from your exocortex fork root:"
+    echo "  cd /path/to/your-exocortex && bash update.sh"
     exit 1
 fi
 
@@ -106,8 +105,53 @@ if $STASHED; then
     git stash pop || echo "  WARN: Stash pop conflict. Run 'git stash pop' manually."
 fi
 
-# --- 4. Reinstall platform-space ---
-echo "[3/5] Reinstalling platform-space..."
+# --- 3. Re-substitute placeholders ---
+echo "[3/6] Re-substituting placeholders..."
+
+# After merge, new lines from upstream may contain {{WORKSPACE_DIR}} etc.
+# Detect values from the current environment
+PLACEHOLDER_COUNT=$(grep -r '{{WORKSPACE_DIR}}' "$EXOCORTEX_DIR" --include="*.md" --include="*.sh" --include="*.json" --include="*.yaml" --include="*.yml" --include="*.plist" -l 2>/dev/null | wc -l | tr -d ' ')
+
+if [ "$PLACEHOLDER_COUNT" -gt 0 ]; then
+    echo "  Found $PLACEHOLDER_COUNT files with unsubstituted {{WORKSPACE_DIR}}"
+    find "$EXOCORTEX_DIR" -type f \( -name "*.md" -o -name "*.json" -o -name "*.sh" -o -name "*.plist" -o -name "*.yaml" -o -name "*.yml" \) | while read file; do
+        sed -i '' "s|{{WORKSPACE_DIR}}|$WORKSPACE_DIR|g" "$file"
+    done
+    echo "  Re-substituted {{WORKSPACE_DIR}} → $WORKSPACE_DIR"
+
+    # Commit the re-substitution
+    if ! git -C "$EXOCORTEX_DIR" diff --quiet; then
+        git -C "$EXOCORTEX_DIR" add -A
+        git -C "$EXOCORTEX_DIR" commit -m "chore: re-substitute placeholders after upstream merge" --no-verify 2>&1 | sed 's/^/  /'
+    fi
+else
+    echo "  No unsubstituted placeholders found"
+fi
+
+# Check for any remaining placeholders (other than WORKSPACE_DIR)
+REMAINING=$(grep -r '{{[A-Z_]*}}' "$EXOCORTEX_DIR" --include="*.md" --include="*.sh" --include="*.json" --include="*.yaml" -l 2>/dev/null | wc -l | tr -d ' ')
+if [ "$REMAINING" -gt 0 ]; then
+    echo "  WARN: $REMAINING files still have unsubstituted placeholders."
+    echo "  Run 'bash setup.sh' to re-substitute all placeholders."
+fi
+
+# --- 4. Show release notes ---
+echo "[4/6] Release notes..."
+if [ -f "$EXOCORTEX_DIR/CHANGELOG.md" ]; then
+    # Extract current version from CHANGELOG (first ## heading)
+    echo ""
+    echo "  ┌──────────────────────────────────────┐"
+    echo "  │         What's New                   │"
+    echo "  └──────────────────────────────────────┘"
+    # Show entries between first and second ## headings (latest version)
+    sed -n '/^## \[/,/^## \[/{/^## \[/!{/^## \[/!p}}' "$EXOCORTEX_DIR/CHANGELOG.md" | head -30 | sed 's/^/  /'
+    echo ""
+else
+    echo "  No CHANGELOG.md found"
+fi
+
+# --- 5. Reinstall platform-space ---
+echo "[5/6] Reinstalling platform-space..."
 
 # Copy CLAUDE.md to workspace root
 if [ -f "$EXOCORTEX_DIR/CLAUDE.md" ]; then
@@ -165,8 +209,8 @@ print('  Updated: .claude/settings.local.json (merged)')
     fi
 fi
 
-# --- 5. Reinstall roles ---
-echo "[4/5] Reinstalling roles..."
+# --- 6. Reinstall roles ---
+echo "[6/6] Reinstalling roles..."
 
 # Check which role files changed and reinstall if needed
 CHANGED_FILES=$(git diff --name-only "$LOCAL".."$UPSTREAM" 2>/dev/null || echo "")
@@ -195,7 +239,7 @@ for role_dir in "$EXOCORTEX_DIR"/roles/*/; do
 done
 
 # --- Done ---
-echo "[5/5] Pushing merge commit..."
+echo "Pushing merge commit..."
 git push 2>&1 | sed 's/^/  /'
 
 echo ""

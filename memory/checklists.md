@@ -27,8 +27,8 @@
 
 ## При перемещении / переименовании репозитория
 
-- [ ] `grep -r "Github/<old-path>/"` по ВСЕМ репо — найти ВСЕ внутренние ссылки
-- [ ] Скрипты (.sh): hardcoded пути `$HOME/Github/...`
+- [ ] `grep -r "<old-path>/"` по ВСЕМ репо — найти ВСЕ внутренние ссылки
+- [ ] Скрипты (.sh): hardcoded пути (должны быть `{{WORKSPACE_DIR}}`)
 - [ ] Промпты (.md): `{{WORKSPACE_DIR}}/...` пути к config/routing
 - [ ] Конфиги (config.yaml): `script:` поля
 - [ ] LaunchD templates (.plist): `<string>/Users/.../</string>`

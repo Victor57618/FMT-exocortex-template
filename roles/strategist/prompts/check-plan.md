@@ -4,7 +4,7 @@
 
 ## Контекст
 
-- Планы: ~/Github/DS-strategy/current/
+- Планы: {{WORKSPACE_DIR}}/DS-strategy/current/
 
 ## Алгоритм
 

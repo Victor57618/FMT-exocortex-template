@@ -91,7 +91,7 @@ cleanup_state() {
 # Разделяет архивацию (мгновенно) и генерацию (15+ мин Claude Code).
 # Гарантирует: даже если генерация ещё не началась, старый план не висит в current/.
 pre_archive_dayplan() {
-    local strategy_dir="$HOME/Github/DS-strategy"
+    local strategy_dir="{{WORKSPACE_DIR}}/DS-strategy"
     local archive_dir="$strategy_dir/archive/day-plans"
     local moved=0
 
