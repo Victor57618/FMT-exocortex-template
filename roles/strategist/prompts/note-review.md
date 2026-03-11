@@ -1,6 +1,6 @@
 Выполни сценарий «Ежедневный разбор заметок» для роли Стратег (R1).
 
-> Source-of-truth: DP.AGENT.012-strategist (PACK-digital-platform). Алгоритм полностью описан ниже.
+> Source-of-truth: DP.ROLE.012-strategist (PACK-digital-platform). Алгоритм полностью описан ниже.
 
 ## Контекст
 

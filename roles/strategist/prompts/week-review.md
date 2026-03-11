@@ -3,7 +3,7 @@
 > **Триггер:** Автоматический — Пн 00:00 (полночь Вс→Пн, launchd).
 > Создаёт WeekReport для клуба. Служит входом для session-prep (Пн 4:00).
 
-> Source-of-truth: DP.AGENT.012-strategist (PACK-digital-platform). Алгоритм полностью описан ниже.
+> Source-of-truth: DP.ROLE.012-strategist (PACK-digital-platform). Алгоритм полностью описан ниже.
 
 ## Контекст
 

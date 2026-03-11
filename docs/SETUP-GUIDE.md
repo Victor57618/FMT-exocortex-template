@@ -621,7 +621,7 @@ rm -rf ~/IWE/DS-strategy
 | `DP.IWE.002` | Шаблон и установка: пререквизиты, стоимость, роли, ОРЗ, FAQ, безопасность |
 | `DP.EXOCORTEX.001` | Модульный экзокортекс: 3 слоя, template-sync, standard/personal |
 | `DP.ARCH.002` | Тиры T1-T5: что доступно на каждом уровне |
-| `DP.AGENT.001` | Полный реестр ИИ-ролей (21 роль) |
+| `DP.ROLE.001` | Полный реестр ИИ-ролей (21 роль) |
 
 > **Нужна помощь?** Спроси бота @aist_me_bot — он ищет по базе знаний платформы (Pack).
 > **Техническая проблема?** Открой issue: [github.com/aisystant/FMT-exocortex-template/issues](https://github.com/aisystant/FMT-exocortex-template/issues)

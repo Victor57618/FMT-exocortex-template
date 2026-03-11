@@ -1,5 +1,5 @@
 # Role manifest — Синхронизатор (R8)
-# Source-of-truth: DP.AGENT.001 §3.2
+# Source-of-truth: DP.ROLE.001 §3.2
 # Contract: roles/ROLE-CONTRACT.md
 
 name: synchronizer

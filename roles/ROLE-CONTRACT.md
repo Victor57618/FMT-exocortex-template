@@ -2,7 +2,7 @@
 
 > Формальная спецификация: что должна содержать директория роли в `roles/`.
 > Теория: [DP.D.033](https://github.com/TserenTserenov/PACK-digital-platform/blob/main/pack/digital-platform/01-domain-contract/DP.D.033-role-centric-architecture.md) (Role-Centric Architecture).
-> Каталог ролей: [DP.AGENT.001 §3.2](https://github.com/TserenTserenov/PACK-digital-platform/blob/main/pack/digital-platform/02-domain-entities/DP.AGENT.001-ai-agents.md).
+> Каталог ролей: [DP.ROLE.001 §3.2](https://github.com/TserenTserenov/PACK-digital-platform/blob/main/pack/digital-platform/02-domain-entities/DP.ROLE.001-platform-roles.md).
 
 ---
 
@@ -46,7 +46,7 @@ roles/{name}/
 ```yaml
 # === Обязательные поля ===
 name: string              # Имя директории (lowercase, без пробелов)
-id: string                # ID роли из DP.AGENT.001 (R1, R2, R8, ...)
+id: string                # ID роли из DP.ROLE.001 (R1, R2, R8, ...)
 type: agential|functional # agential = Grade 2+ (ИИ), functional = Grade 0-1 (bash)
 display_name: string      # Человеческое имя ("Стратег", "Экстрактор")
 
