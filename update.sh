@@ -159,6 +159,31 @@ if [ -f "$EXOCORTEX_DIR/CLAUDE.md" ]; then
     echo "  Updated: $WORKSPACE_DIR/CLAUDE.md"
 fi
 
+# Merge ONTOLOGY.md: Platform-space (§1-4) from upstream, User-space (§5-6) preserved
+ONTOLOGY_SRC="$EXOCORTEX_DIR/ONTOLOGY.md"
+ONTOLOGY_DST="$WORKSPACE_DIR/ONTOLOGY.md"
+if [ -f "$ONTOLOGY_SRC" ]; then
+    if [ -f "$ONTOLOGY_DST" ]; then
+        # Extract User-space sections (§5-6) from current user file
+        USER_SECTIONS=$(sed -n '/^<!-- USER-SPACE/,$p' "$ONTOLOGY_DST")
+        if [ -n "$USER_SECTIONS" ]; then
+            # Take Platform-space (everything before USER-SPACE marker) from upstream
+            sed '/^<!-- USER-SPACE/,$d' "$ONTOLOGY_SRC" > "$ONTOLOGY_DST.tmp"
+            # Append user's sections
+            echo "$USER_SECTIONS" >> "$ONTOLOGY_DST.tmp"
+            mv "$ONTOLOGY_DST.tmp" "$ONTOLOGY_DST"
+            echo "  Updated: ONTOLOGY.md (platform-space merged, user-space preserved)"
+        else
+            # No user-space marker found — full copy (first install or old format)
+            cp "$ONTOLOGY_SRC" "$ONTOLOGY_DST"
+            echo "  Updated: ONTOLOGY.md (full copy, no user-space found)"
+        fi
+    else
+        cp "$ONTOLOGY_SRC" "$ONTOLOGY_DST"
+        echo "  Installed: ONTOLOGY.md"
+    fi
+fi
+
 # Copy memory files
 CLAUDE_MEMORY_DIR="$HOME/.claude/projects/-$(echo "$WORKSPACE_DIR" | tr '/' '-')/memory"
 if [ -d "$EXOCORTEX_DIR/memory" ] && [ -d "$CLAUDE_MEMORY_DIR" ]; then
