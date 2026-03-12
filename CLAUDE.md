@@ -123,6 +123,8 @@ Level 3: DS (третьи принципы)        ← производные о
 Политика: ≤11 файлов. Справочники ≤100. Протоколы ≤150. Реестры (MEMORY, hard-distinctions) ≤200 + чистка на Close. Кросс-системное → memory/. Системное → repo/CLAUDE.md.
 Backup на Close: `memory/ + CLAUDE.md → DS-strategy/exocortex/`
 
+> **Рабочая директория:** Все сессии Claude Code открывать из workspace root. НЕ из sub-директорий — иначе `memory/` не резолвится. `memory/` — симлинк на auto-memory Claude Code (создаётся setup.sh).
+
 ---
 
 ## 5. АрхГейт (ArchGate) — ОБЯЗАТЕЛЬНАЯ оценка

@@ -268,6 +268,14 @@ mkdir -p "$CLAUDE_MEMORY_DIR"
 cp "$TEMPLATE_DIR/memory/"*.md "$CLAUDE_MEMORY_DIR/"
 echo "  Copied to $CLAUDE_MEMORY_DIR"
 
+# Create symlink so CLAUDE.md references (memory/protocol-open.md etc.) resolve from workspace root
+if [ ! -e "$WORKSPACE_DIR/memory" ]; then
+    ln -s "$CLAUDE_MEMORY_DIR" "$WORKSPACE_DIR/memory"
+    echo "  Symlink: $WORKSPACE_DIR/memory → $CLAUDE_MEMORY_DIR"
+else
+    echo "  WARN: $WORKSPACE_DIR/memory already exists, symlink skipped."
+fi
+
 # === 4. Copy .claude settings ===
 if $CORE_ONLY; then
     echo "[4/6] Claude settings... пропущено (--core)"
@@ -387,6 +395,7 @@ echo ""
 echo "Verify installation:"
 echo "  ✓ CLAUDE.md:   $WORKSPACE_DIR/CLAUDE.md"
 echo "  ✓ Memory:      $CLAUDE_MEMORY_DIR/ ($(ls "$CLAUDE_MEMORY_DIR"/*.md 2>/dev/null | wc -l | tr -d ' ') files)"
+echo "  ✓ Symlink:     $WORKSPACE_DIR/memory → $CLAUDE_MEMORY_DIR"
 echo "  ✓ DS-strategy: $MY_STRATEGY_DIR/"
 echo "  ✓ Template:    $TEMPLATE_DIR/"
 echo ""
