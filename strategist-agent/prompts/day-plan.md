@@ -1,3 +1,6 @@
+> **DEPRECATED (WP-98, 2026-03-14).** Day Open перенесён в `memory/protocol-open.md § День` (ОРЗ-фрактал).
+> Этот файл сохранён для справки. При триггере «открывай день» → читать `protocol-open.md`.
+
 Выполни сценарий Day Plan для роли Стратег (R1).
 
 Источник сценария: {{WORKSPACE_DIR}}/PACK-digital-platform/pack/digital-platform/02-domain-entities/DP.ROLE.012-strategist/scenarios/scheduled/02-day-plan.md
