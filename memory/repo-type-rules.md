@@ -68,7 +68,7 @@
 Конвенция: `DS-{slug}` (примеры: `DS-strategist-agent`, `DS-extractor-agent`).
 Привязка к Pack через `source-of-truth: {ID}` в CLAUDE.md репо, не через имя.
 
-### DS/governance: DS-my-strategy (личная база данных)
+### DS/governance: DS-strategy (личная база данных)
 
 **Содержит:** Планы недели, заметки (inbox/), контексты РП, extraction reports, онтологию.
 

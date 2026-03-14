@@ -1,0 +1,26 @@
+# Day Rhythm Configuration (L4 Personal)
+# Override defaults from IWE Template (L3).
+# Agent reads this file at Day Open and during Day Work.
+
+day_open:
+  strategy_day: monday          # Day for strategizing session (monday..sunday)
+  self_dev_slot: 1              # Slot number for self-development (always first by default)
+  self_dev_missing_alert: true  # Explicitly say if no self-dev in today's plan
+
+news:
+  enabled: false                # Enable news digest at Day Open (requires WebSearch)
+  max_items_per_topic: 3
+  topics:
+    - name: AI
+      query: "artificial intelligence LLM agents"
+      feeds: []                 # RSS URLs (empty = WebSearch fallback)
+    - name: Engineering
+      query: "software engineering systems thinking"
+      feeds: []
+
+pomodoro:
+  work_minutes: 25
+  break_minutes: 5
+  long_break_minutes: 15
+  sessions_before_long_break: 4
+  session_alert_minutes: 50     # Remind to take a break after this many minutes
