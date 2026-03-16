@@ -205,6 +205,17 @@ Backup на Close: `memory/ + CLAUDE.md → DS-strategy/exocortex/`
 
 ---
 
+## Правило синхронизации FAQ
+
+> **Source-of-truth:** `DP.IWE.002 §11` (Pack). При добавлении/изменении FAQ-вопроса — обновить ВСЕ 3 места:
+> 1. `DP.IWE.002 §11` (полный ответ) — Pack
+> 2. `README.md §FAQ` (краткая выжимка) — шаблон
+> 3. `docs/IWE-HELP.md` (если затрагивает установку/работу) — шаблон
+>
+> Бот находит ответы через `knowledge-mcp search` → DP.IWE.002. README — для людей на GitHub.
+
+---
+
 ## 8. Обновление этого файла
 
 - Новые протоколы → `memory/protocol-*.md`, НЕ сюда
