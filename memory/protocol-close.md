@@ -199,7 +199,7 @@ done
 - [ ] DS-strategy/current/Plan (WeekPlan) обновлён
 - [ ] DS-strategy/current/DayPlan обновлён (статусы ВСЕХ строк в таблице: РП + ad-hoc)
 - [ ] Captures применены
-- [ ] **Selective Reindex:** Pack изменены? → `selective-reindex.sh`. **Новый Pack/DS?** → добавить в `sources.json` knowledge-mcp + reindex
+- [ ] **Knowledge-mcp синхронизация:** Были коммиты в Pack или DS? → (1) источник зарегистрирован в `sources.json`? Нет → добавить. (2) `selective-reindex.sh` выполнен? (3) Тест: `search` по ключевому слову из сегодняшних изменений → находит актуальную версию
 - [ ] **Repo CLAUDE.md:** feat-коммиты → новые правила для CLAUDE.md репо?
 - [ ] **WP context:** коммиты реализуют пункт WP-плана → пункт done?
 - [ ] **Draft-list:** Pack обогащён → предложить черновик? Черновики из сессии → draft-list обновлён?
