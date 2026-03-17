@@ -5,6 +5,16 @@ All notable changes to FMT-exocortex-template will be documented in this file.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versioning: [Semantic Versioning](https://semver.org/).
 
+## [0.8.2] — 2026-03-17
+
+### Added
+- **protocol-open.md** — 4-й класс верификации `trivial` (Haiku): результат очевиден, проверка не нужна
+- **protocol-open.md** — два сценария переключения модели:
+  - Сценарий A: вся сессия — Claude рекомендует `/model`, пользователь переключает
+  - Сценарий B: отдельная задача внутри сессии — делегирование sub-agent'у (только вниз)
+- **SETUP-GUIDE.md §0.5b** — класс верификации в таблице моделей + описание двух сценариев
+- **LEARNING-PATH.md §5.1b** — trivial в таблице классов + два сценария переключения
+
 ## [0.8.1] — 2026-03-16
 
 ### Added
