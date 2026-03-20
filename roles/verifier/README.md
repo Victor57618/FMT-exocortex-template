@@ -12,7 +12,9 @@
 | Режим | Триггер | Как |
 |-------|---------|-----|
 | **По запросу** | Явная команда пользователя | `/verify [артефакт]` |
-| **Session Close** | Verification Gate (шаг 1b protocol-close) | Автоматически для open-loop/problem-framing РП |
+| **Quick Close** | Верификация чеклиста (шаг 7 protocol-close § Сессия) | Sub-agent Haiku, context isolation |
+| **Day Close** | Верификация чеклиста (шаг 10 protocol-close § День) | Sub-agent Haiku, context isolation |
+| **Session Close** | Verification Gate (шаг 3 protocol-close) | Автоматически для open-loop/problem-framing РП |
 | **На рубеже** | Создан значимый артефакт | Предложение в protocol-work §2b |
 
 ## Что проверяет

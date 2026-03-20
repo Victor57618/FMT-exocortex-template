@@ -69,7 +69,7 @@ Level 3: DS (третьи принципы)        ← производные о
 3. **Pull-before-Commit (DS-strategy):** `git pull --rebase` → модификация → `commit` → `push`. Нарушение = конфликты.
 4. **Без Obsidian (DS-strategy):** Просмотр через VS Code, НЕ Obsidian.
 5. **Close:** При триггере Закрытия → протокол Закрытия → выполнить.
-6. **Чеклист-верификация (Haiku R23):** Только при **Day Close** и протоколах с секцией «Чеклист» (≥10 пунктов). Quick Close (6 пунктов) — агент проверяет сам. Причина: context isolation (VR.SOTA.002) оправдана при большом чеклисте, не при малом.
+6. **Чеклист-верификация (Haiku R23):** При **Quick Close** и **Day Close** — sub-agent Haiku R23 (context isolation, VR.SOTA.002). Исключения: сессия ≤15 мин, сессия без изменений файлов.
 
 ### Протокол Работы (summary, полный → `memory/protocol-work.md`)
 
