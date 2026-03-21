@@ -119,7 +119,9 @@ jobs:
         run: |
           mkdir -p /tmp/repos
           # Копируем текущий (strategy) репо
-          cp -r . /tmp/repos/$(basename "$STRATEGY_REPO")
+          REPO_NAME="${STRATEGY_REPO##*/}"
+          [ -z "$REPO_NAME" ] && REPO_NAME="strategy"
+          cp -r . /tmp/repos/"$REPO_NAME"
 
           # Дополнительные репо (если указаны)
           if [ -n "$HEALTH_CHECK_REPOS" ]; then
@@ -218,7 +220,7 @@ jobs:
 
           # ── 6. WP-статистика (из MEMORY.md backup) ──
           if [ -f "exocortex/MEMORY.md" ]; then
-            WP_IN_PROGRESS=$(grep -c "in_progress" exocortex/MEMORY.md 2>/dev/null || echo "0")
+            WP_IN_PROGRESS=$(grep -c "| in_progress" exocortex/MEMORY.md 2>/dev/null || echo "0")
             WP_PENDING=$(grep -c "| pending" exocortex/MEMORY.md 2>/dev/null || echo "0")
             echo "📋 РП: <b>${WP_IN_PROGRESS}</b> в работе, <b>${WP_PENDING}</b> ожидают" >> /tmp/health.txt
           fi
