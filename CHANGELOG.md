@@ -5,6 +5,13 @@ All notable changes to FMT-exocortex-template will be documented in this file.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versioning: [Semantic Versioning](https://semver.org/).
 
+## [0.13.4] — 2026-03-22
+
+### Added
+- **Priority Gate** — новый Pre-action Gate в CLAUDE.md: при создании РП ≥3h обязательный вопрос «К какому результату месяца?» (R{N} / поддержка / off-plan)
+- **wp-new SKILL** — 5-е место записи: маппинг РП → Результат в `Strategy.md`. Порог ≥3h
+- **Strategy template** — секции «Результаты месяца» и «РП → Результаты» с пояснениями допустимых значений
+
 ## [0.13.3] — 2026-03-21
 
 ### Fixed
