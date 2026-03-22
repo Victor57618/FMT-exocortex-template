@@ -60,7 +60,8 @@
 | guides-mcp (исходники) | `DS-MCP/guides-mcp/src/index.ts` |
 | fsm-mcp (исходники) | `DS-MCP/fsm-mcp/src/index.ts` |
 | Activity Hub | `DS-IT-systems/activity-hub/` |
-| Автономные агенты (DS) | `DS-autonomous-agents/` |
+| Автономные агенты (код) | `DS-autonomous-agents/` |
+| Данные агентов (workspace) | `DS-agent-workspace/` |
 
 ## Стратегия
 

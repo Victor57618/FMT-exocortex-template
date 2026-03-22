@@ -61,7 +61,7 @@
    - Если в сессии был **АрхГейт** и после него менялся код → запустить `/verify archgate` вместо `/verify code`
    - Verdict → в секцию «Что проверить» отчёта
 4. **MEMORY.md** — обновить статус РП (одна строка: `in_progress` / `done`)
-4b. **DayPlan** — обновить строку РП в `DS-strategy/current/DayPlan YYYY-MM-DD.md`: done → зачеркнуть, partial → обновить статус. Day Close = safety net, но DayPlan должен быть актуален между сессиями.
+4b. **DayPlan** — обновить строку РП в `DS-strategy/current/DayPlan YYYY-MM-DD.md`. **Правило зачёркивания:** зачеркнуть всё, что отработано на сегодня — даже если РП остаётся in_progress (в WeekPlan он не зачёркивается, пока не done). DayPlan отражает «что сделано сегодня», WeekPlan — «что закрыто на неделе». Day Close = safety net, но DayPlan должен быть актуален между сессиями.
 5. **WP Context File:**
    - in_progress → обновить секцию «Осталось» в `DS-strategy/inbox/WP-{N}-{slug}.md`
    - done → пометить (архивация — на Day Close)
@@ -145,7 +145,7 @@ done
 
 **2c.** Обновить `DS-strategy/docs/WP-REGISTRY.md`: статусы + даты.
 
-**2d.** Обновить `DS-agent-workspace/scheduler/open-sessions.log`: удалить строки закрытых сессий.
+**2d.** Обновить `DS-strategy/inbox/open-sessions.log`: удалить строки закрытых сессий.
 
 **2e.** Governance-синхронизация: новые репо/сервисы за день? → REPOSITORY-REGISTRY, navigation.md, MAP.002↔PROCESSES.md.
 

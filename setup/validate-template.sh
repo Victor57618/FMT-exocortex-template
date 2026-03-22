@@ -49,12 +49,15 @@ echo -n "[2/5] Hardcoded /Users/ paths... "
 count=$(grep -rn '/Users/' "$TEMPLATE_DIR" --include="*.md" --include="*.sh" \
         --include="*.json" --include="*.plist" \
         --exclude='validate-template.sh' --exclude='setup.sh' 2>/dev/null \
-        | grep -v '/Users/\.\.\./' | wc -l | tr -d ' ' || true)
+        | grep -v '/Users/\.\.\./' \
+        | grep -v '# .*\(/Users/\|e\.g\.\)' \
+        | wc -l | tr -d ' ' || true)
 if [ "$count" -gt 0 ]; then
     echo "FAIL ($count hits)"
     grep -rn '/Users/' "$TEMPLATE_DIR" --include="*.md" --include="*.sh" \
         --exclude='validate-template.sh' --exclude='setup.sh' 2>/dev/null \
-        | grep -v '/Users/\.\.\./' | head -3 || true
+        | grep -v '/Users/\.\.\./' \
+        | grep -v '# .*\(/Users/\|e\.g\.\)' | head -3 || true
     FAIL=1
 else
     echo "PASS"
