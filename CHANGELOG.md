@@ -5,6 +5,12 @@ All notable changes to FMT-exocortex-template will be documented in this file.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versioning: [Semantic Versioning](https://semver.org/).
 
+## [0.13.5] — 2026-03-22
+
+### Changed
+- **protocol-close.md** — формула мультипликатора: partial РП считаются (% × бюджет), мелкие РП = 0.25h (не 0). Недельный мультипликатор = Σ бюджетов ВСЕХ отработанных РП / WakaTime. Убран плановый бюджет из формулы
+- **hard-distinctions** — HD #42: Тир ≠ Квалификация (DP.D.042)
+
 ## [0.13.4] — 2026-03-22
 
 ### Added
