@@ -36,7 +36,7 @@
 
 | Pack | Путь |
 |------|------|
-| PACK-education | Методика обучения |
+| ~~PACK-education~~ | ~~Архивирован → PACK-MIM~~ |
 | PACK-personal | Личностное развитие |
 | PACK-verification | Верификация и приёмка (трансдоменный) |
 | PACK-autonomous-agents | Автономные агенты (BC, различения, методы) |
