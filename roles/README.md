@@ -23,7 +23,7 @@
 |----------|-------|-----------|
 | day-plan | Каждое утро (Вт-Вс) | `DayPlan YYYY-MM-DD.md` |
 | session-prep | Утро (Пн) | `WeekPlan W{N}.md` (черновик) |
-| week-review | Ночь (Вс→Пн) | `WeekReport W{N}.md` |
+| week-review | Ночь (Вс→Пн) | Секция «Итоги W{N}» в WeekPlan + пост |
 | note-review | Вечер (23:00) | Классификация заметок из inbox |
 | strategy-session | По запросу | Интерактивная стратегическая сессия |
 | + 4 других | По запросу | См. `strategist/prompts/` |

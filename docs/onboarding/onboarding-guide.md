@@ -336,7 +336,7 @@ IWE использует конкретные концепции из систе
 | Сценарий | Обещание | Ссылка |
 |----------|----------|--------|
 | Планирование дня | DayPlan к 08:00 с приоритетами и контекстом | [DP.SC.001](https://github.com/TserenTserenov/PACK-digital-platform/blob/main/pack/digital-platform/08-use-cases/DP.SC.001-daily-planning.md) |
-| Планирование недели | WeekPlan + WeekReport | [DP.SC.002](https://github.com/TserenTserenov/PACK-digital-platform/blob/main/pack/digital-platform/08-use-cases/DP.SC.002-weekly-planning.md) |
+| Планирование недели | WeekPlan (с секцией «Итоги W{N}») | [DP.SC.002](https://github.com/TserenTserenov/PACK-digital-platform/blob/main/pack/digital-platform/08-use-cases/DP.SC.002-weekly-planning.md) |
 | Развитие и обучение | Q&A, проверка ДЗ, марафоны | [DP.SC.003](https://github.com/TserenTserenov/PACK-digital-platform/blob/main/pack/digital-platform/08-use-cases/DP.SC.003-learning-and-development.md) |
 | Захват знаний | Fleeting notes → Pack | [DP.SC.004](https://github.com/TserenTserenov/PACK-digital-platform/blob/main/pack/digital-platform/08-use-cases/DP.SC.004-knowledge-capture.md) |
 

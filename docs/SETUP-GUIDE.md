@@ -541,7 +541,7 @@ sudo pmset repeat wakeorpoweron MTWRFSU 03:55:00
 | **Каждые 3 часа** | Экстрактор* | Проверяет inbox (заметки, captures) → предлагает знания в Pack | `DS-strategy/inbox/extraction-reports/` |
 | **Вечер (23:00)** | Стратег | Note-Review классифицирует заметки из Telegram | Целевые документы в DS-strategy |
 | **Ночь (00:00)** | Синхронизатор* | Code-scan — обзор изменений в downstream-репо | `DS-strategy/current/CodeScan YYYY-MM-DD.md` |
-| **Ночь (Вс→Пн)** | Стратег | Week Review — итоги недели | `DS-strategy/current/WeekReport W{N}.md` |
+| **Ночь (Вс→Пн)** | Стратег | Week Review — итоги недели | Секция «Итоги W{N}» в `DS-strategy/current/WeekPlan W{N}.md` |
 | **Утро (06:00)** | Синхронизатор* | Daily report — сводка ночных задач | `DS-strategy/current/SchedulerReport YYYY-MM-DD.md` |
 
 > *Экстрактор и Синхронизатор работают только если установлены (Этап 1.4).*
