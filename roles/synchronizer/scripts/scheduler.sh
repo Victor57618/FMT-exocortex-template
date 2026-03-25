@@ -10,6 +10,10 @@
 
 set -euo pipefail
 
+# Предотвращаем сон: -i (idle, работает на батарее) -d (display) -u (user activity)
+# Флаг -s (system sleep) не используем — он НЕ работает на батарее (OBC может переключить профиль)
+caffeinate -diu -w $$ &
+
 # Cross-platform date offset: portable_date_offset <days_back> <format>
 portable_date_offset() {
     local days="$1"

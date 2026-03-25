@@ -4,6 +4,10 @@
 
 set -e
 
+# Предотвращаем сон: -i (idle, работает на батарее) -d (display) -u (user activity)
+# Флаг -s (system sleep) не используем — он НЕ работает на батарее (OBC может переключить профиль)
+caffeinate -diu -w $$ &
+
 # Конфигурация
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_DIR="$(dirname "$SCRIPT_DIR")"
