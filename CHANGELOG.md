@@ -5,6 +5,11 @@ All notable changes to FMT-exocortex-template will be documented in this file.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versioning: [Semantic Versioning](https://semver.org/).
 
+## [0.16.4] — 2026-03-27
+
+### Changed
+- **notify-update.yml** — 3-уровневый фильтр уведомлений: (1) наличие коммитов, (2) наличие changelog с буллет-пунктами, (3) проверка значимости (ключевые слова, значимые файлы, ≥3 пунктов). Незначительные правки (только CLAUDE.md/memory/rules) больше не генерируют уведомления подписчикам
+
 ## [0.16.3] — 2026-03-27
 
 ### Changed
