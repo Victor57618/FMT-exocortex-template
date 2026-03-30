@@ -126,7 +126,7 @@
 | НЭП | `DS-strategy/docs/Dissatisfactions.md` |
 | Задача (на завтра / с дедлайном) | `DS-strategy/current/DayPlan*.md` (ближайший) или `WeekPlan W*.md` |
 | Задача (на неделю) | `DS-strategy/current/WeekPlan W*.md` |
-| Задача (стратегическая) | `DS-strategy/docs/Strategy.md` |
+| Задача (стратегическая) | `DS-strategy/current/WeekPlan W*.md` (секция Inbox Triage → разбирается на Strategy Session) |
 | Личные данные | `DS-strategy/personal/` (contacts / accounts / secrets / reference) |
 
 > Стратег (Day-Plan, 4:00) читает эти документы и ВИДИТ предложения.
