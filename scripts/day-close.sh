@@ -21,6 +21,7 @@ MEMORY_SRC="$HOME/.claude/projects/-Users-$(whoami)-IWE/memory"
 EXOCORTEX_DST="$DS_STRATEGY/exocortex"
 SELECTIVE_REINDEX="$WORKSPACE_DIR/DS-MCP/knowledge-mcp/scripts/selective-reindex.sh"
 LINEAR_SYNC="$WORKSPACE_DIR/DS-IT-systems/DS-ai-systems/synchronizer/scripts/linear-sync.sh"
+FPF_DIR="$WORKSPACE_DIR/FPF"
 LOG_FILE="$WORKSPACE_DIR/DS-agent-workspace/scheduler/day-close.log"
 # === /КОНФИГУРАЦИЯ ===
 
@@ -103,12 +104,30 @@ do_linear() {
   "$LINEAR_SYNC"
 }
 
+# --- Шаг 4: FPF update ---
+do_fpf_update() {
+  log "Шаг 4/4: FPF git pull"
+
+  if [ ! -d "$FPF_DIR/.git" ]; then
+    warn "  FPF репозиторий не найден: $FPF_DIR — пропуск"
+    return 0
+  fi
+
+  local result
+  result=$(git -C "$FPF_DIR" pull --rebase 2>&1)
+  if echo "$result" | grep -q "Already up to date"; then
+    log "  FPF уже актуален"
+  else
+    log "  FPF обновлён: $(echo "$result" | tail -1)"
+  fi
+}
+
 # --- Лог ---
 write_log() {
   local date_str
   date_str=$(date "+%Y-%m-%d %H:%M")
   mkdir -p "$(dirname "$LOG_FILE")"
-  echo "$date_str | day-close | backup=$1 reindex=$2 linear=$3" >> "$LOG_FILE"
+  echo "$date_str | day-close | backup=$1 reindex=$2 linear=$3 fpf=$4" >> "$LOG_FILE"
 }
 
 # --- Main ---
@@ -117,15 +136,17 @@ main() {
   local run_backup=false
   local run_reindex=false
   local run_linear=false
+  local run_fpf=false
 
   for arg in "$@"; do
     case "$arg" in
       --backup)  run_backup=true; do_all=false ;;
       --reindex) run_reindex=true; do_all=false ;;
       --linear)  run_linear=true; do_all=false ;;
+      --fpf)     run_fpf=true; do_all=false ;;
       --help|-h)
-        echo "Использование: day-close.sh [--backup] [--reindex] [--linear]"
-        echo "  Без аргументов — все три шага"
+        echo "Использование: day-close.sh [--backup] [--reindex] [--linear] [--fpf]"
+        echo "  Без аргументов — все четыре шага"
         exit 0
         ;;
       *)
@@ -139,11 +160,12 @@ main() {
     run_backup=true
     run_reindex=true
     run_linear=true
+    run_fpf=true
   fi
 
   log "=== Day Close (автоматические шаги) ==="
 
-  local backup_status="skip" reindex_status="skip" linear_status="skip"
+  local backup_status="skip" reindex_status="skip" linear_status="skip" fpf_status="skip"
 
   if $run_backup; then
     if do_backup; then backup_status="ok"; else backup_status="fail"; fi
@@ -157,10 +179,14 @@ main() {
     if do_linear; then linear_status="ok"; else linear_status="fail"; fi
   fi
 
-  write_log "$backup_status" "$reindex_status" "$linear_status"
+  if $run_fpf; then
+    if do_fpf_update; then fpf_status="ok"; else fpf_status="fail"; fi
+  fi
+
+  write_log "$backup_status" "$reindex_status" "$linear_status" "$fpf_status"
 
   log "=== Готово ==="
-  log "  backup=$backup_status  reindex=$reindex_status  linear=$linear_status"
+  log "  backup=$backup_status  reindex=$reindex_status  linear=$linear_status  fpf=$fpf_status"
 }
 
 main "$@"
