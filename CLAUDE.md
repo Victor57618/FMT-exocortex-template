@@ -63,7 +63,7 @@
 | Документ/чеклист | `memory/checklists.md` |
 
 Политика: ≤11 файлов. Справочники ≤100 строк. Протоколы ≤150. MEMORY.md ≤100 строк.
-Рабочая директория: `{{WORKSPACE_DIR}}/` (не из sub-директорий). `{{WORKSPACE_DIR}}/memory/` = симлинк на auto-memory.
+Рабочая директория: `/Users/tserentserenov/IWE/` (не из sub-директорий). `/Users/tserentserenov/IWE/memory/` = симлинк на auto-memory.
 
 ## 5. АрхГейт — ОБЯЗАТЕЛЬНАЯ оценка
 
@@ -124,7 +124,7 @@
 ### Именование
 
 - `DS-strategy` (не `DS-strategy`) — личный governance-хаб
-- `{{WORKSPACE_DIR}}/` — рабочая директория
+- `/Users/tserentserenov/IWE/` — рабочая директория
 
 ### Read-only репо
 

@@ -135,9 +135,9 @@
 #### 1. Сбор данных
 
 ```bash
-for repo in $(ls {{WORKSPACE_DIR}}/); do
-  if [ -d {{WORKSPACE_DIR}}/$repo/.git ]; then
-    commits=$(git -C {{WORKSPACE_DIR}}/$repo log --since="today 00:00" --oneline --no-merges 2>/dev/null)
+for repo in $(ls /Users/tserentserenov/IWE/); do
+  if [ -d /Users/tserentserenov/IWE/$repo/.git ]; then
+    commits=$(git -C /Users/tserentserenov/IWE/$repo log --since="today 00:00" --oneline --no-merges 2>/dev/null)
     [ -n "$commits" ] && echo "=== $repo ===" && echo "$commits"
   fi
 done
@@ -181,7 +181,7 @@ done
 
 ```bash
 # Запуск одной командой:
-{{WORKSPACE_DIR}}/DS-IT-systems/DS-ai-systems/synchronizer/scripts/day-close.sh
+/Users/tserentserenov/IWE/DS-IT-systems/DS-ai-systems/synchronizer/scripts/day-close.sh
 ```
 
 Скрипт выполняет:
