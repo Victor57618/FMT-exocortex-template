@@ -6,6 +6,9 @@ day_open:
   strategy_day: monday          # Day for strategizing session (monday..sunday)
   self_dev_slot: 1              # Slot number for self-development (always first by default)
   self_dev_missing_alert: true  # Explicitly say if no self-dev in today's plan
+  interactive: false            # false = Day Open одним блоком. true = промежуточные вопросы.
+  calendar_ids: []              # Calendar IDs to check. Empty = all available calendars.
+                                # Examples: ['primary', 'work@company.com', 'team-calendar-id@group']
 
 news:
   enabled: false                # Enable news digest at Day Open (requires WebSearch)
@@ -37,6 +40,17 @@ video:
     min_duration_minutes: 5     # Only transcribe videos longer than N min
   content:
     suggest_posts: true         # Suggest post ideas from transcribed videos
+
+# mandatory_daily_wps:             # WPs that MUST appear in every DayPlan
+#   - wp: 7                        # WP number (from WeekPlan)
+#     min_minutes: 30
+#   - category: content            # Or by category (content, dev, ops)
+#     min_count: 1
+
+budget_spread:
+  enabled: true          # Distribute weekly budget of WPs across remaining days
+  threshold_h: 4         # Only WPs with weekly budget ≥ this value are spread
+  rounding: 0.5          # Round daily_slot to nearest N hours
 
 pomodoro:
   work_minutes: 25

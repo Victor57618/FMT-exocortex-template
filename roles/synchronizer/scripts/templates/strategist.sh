@@ -15,7 +15,7 @@ find_strategy_file() {
             ls -t "$STRATEGY_DIR"/WeekPlan\ W*.md 2>/dev/null | head -1
             ;;
         "week-review")
-            ls -t "$STRATEGY_DIR"/WeekReport\ W*.md 2>/dev/null | head -1
+            ls -t "$STRATEGY_DIR"/WeekPlan\ W*.md 2>/dev/null | head -1
             ;;
         *)
             echo ""
@@ -96,7 +96,7 @@ build_message() {
             local title
             title=$(grep '^# ' "$file" | head -1 | sed 's/^# //')
 
-            printf "<b>📊 %s</b>" "$title"
+            printf "<b>📊 Week-Review завершён</b>\n\n%s" "$title"
             ;;
 
         "note-review")

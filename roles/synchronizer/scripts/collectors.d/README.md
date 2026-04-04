@@ -38,5 +38,5 @@ collect_имя_функции() {
 Персональные коллекторы (L4) — для систем, которые есть не у всех:
 
 - `scout.sh` — ночной разведчик (если настроен DS-agent-workspace/scout/)
-- `unsatisfied.sh` — QA бота (если есть unsatisfied-questions.md)
+- `unsatisfied.sh` — QA бота (если настроен DS-agent-workspace/scheduler/feedback-triage/)
 - `publications.sh` — публикации (если есть DS-Knowledge-Index-*/docs/)

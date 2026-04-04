@@ -53,7 +53,14 @@ send_telegram() {
     fi
 
     local response
-    response=$(curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+    local curl_proxy_args=()
+    if [ -n "${TELEGRAM_PROXY:-}" ]; then
+        curl_proxy_args=(--proxy "$TELEGRAM_PROXY")
+    elif [ -n "${ALL_PROXY:-}" ]; then
+        curl_proxy_args=(--proxy "$ALL_PROXY")
+    fi
+
+    response=$(curl -s "${curl_proxy_args[@]}" -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
         -H "Content-Type: application/json" \
         -d "$json_body")
 

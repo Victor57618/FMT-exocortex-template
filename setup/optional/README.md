@@ -79,7 +79,7 @@ This file is read by Claude during Day Open (`protocol-open.md § День`). No
 
 IWE автоматика в облаке — работает даже когда Mac выключен. Базовый уровень: backup + health check. $0/мес.
 
-**Сценарий:** [DP.SC.019](../../PACK-digital-platform/pack/digital-platform/08-use-cases/DP.SC.019-autonomous-cloud-runtime.md)
+**Сценарий:** [DP.SC.019](../../../PACK-digital-platform/pack/digital-platform/08-service-clauses/DP.SC.019-autonomous-cloud-runtime.md)
 
 ### Что делает
 

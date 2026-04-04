@@ -31,6 +31,7 @@ portable_date_offset() {
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 WORKSPACE="$HOME/IWE"
+GOVERNANCE_DIR="${GOVERNANCE_DIR:-$WORKSPACE/DS-strategy}"
 LOG_DIR="$HOME/logs/synchronizer"
 DATE=$(date +%Y-%m-%d)
 LOG_FILE="$LOG_DIR/dt-collect-$DATE.log"
@@ -141,7 +142,7 @@ print(json.dumps(result))
 }
 
 # ============================================================
-# 2. Git Stats (все репо в ~/IWE/)
+# 2. Git Stats (все репо в {{WORKSPACE_DIR}}/)
 # ============================================================
 
 collect_git() {
@@ -149,7 +150,7 @@ collect_git() {
 import subprocess, json, os
 from datetime import datetime, timedelta
 
-workspace = os.path.expanduser('~/IWE')
+workspace = os.path.expanduser('{{WORKSPACE_DIR}}')
 repos = []
 for name in sorted(os.listdir(workspace)):
     path = os.path.join(workspace, name)
@@ -260,7 +261,7 @@ if os.path.exists(log_path):
 
 # Also count from git log (more reliable — sessions leave commits)
 import subprocess
-workspace = os.path.expanduser('~/IWE')
+workspace = os.path.expanduser('{{WORKSPACE_DIR}}')
 git_sessions_7d = 0
 for name in os.listdir(workspace):
     path = os.path.join(workspace, name)
@@ -376,8 +377,8 @@ print(json.dumps(result))
 # ============================================================
 
 collect_multiplier() {
-    local DAYPLAN_DIR="$WORKSPACE/DS-my-strategy/current"
-    local ARCHIVE_DIR="$WORKSPACE/DS-my-strategy/archive/day-plans"
+    local DAYPLAN_DIR="$GOVERNANCE_DIR/current"
+    local ARCHIVE_DIR="$GOVERNANCE_DIR/archive/day-plans"
 
     python3 -c "
 import json, os, re, glob
@@ -499,7 +500,7 @@ print(json.dumps(result))
 # ============================================================
 
 collect_registry() {
-    local REGISTRY="$WORKSPACE/DS-my-strategy/docs/WP-REGISTRY.md"
+    local REGISTRY="$GOVERNANCE_DIR/docs/WP-REGISTRY.md"
 
     python3 -c "
 import json, os, re
@@ -539,7 +540,7 @@ collect_pack() {
     python3 -c "
 import json, os, re
 
-workspace = os.path.expanduser('~/IWE')
+workspace = os.path.expanduser('{{WORKSPACE_DIR}}')
 pack_stats = {}
 total_md = 0
 total_entities = 0
@@ -579,7 +580,7 @@ print(json.dumps(result))
 # ============================================================
 
 collect_notes() {
-    local NOTES="$WORKSPACE/DS-my-strategy/inbox/fleeting-notes.md"
+    local NOTES="$GOVERNANCE_DIR/inbox/fleeting-notes.md"
 
     python3 -c "
 import json, os, re

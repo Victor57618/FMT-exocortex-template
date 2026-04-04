@@ -4,52 +4,51 @@
 
 ---
 
-## Схема 1. Карта компонентов IWE
+## Схема 1. Четыре компонента IWE
 
-> Ты в центре. Принципы — общий фундамент для тебя и ИИ. Знания создаёшь ты — и они обогащают обоих.
+> IWE = ОС интеллектуальной работы. Четыре компонента, ты в центре, инструменты — средства доставки.
 
 ```mermaid
 graph TB
-    subgraph principles["<b>ПРИНЦИПЫ</b>"]
+    subgraph core["<b>ЯДРО МЫШЛЕНИЯ</b>"]
         direction LR
-        ZP["<b>Нулевые (ZP)</b><br/>Базовые правила<br/>мышления"]
-        FPF["<b>Первые (FPF)</b><br/>Фреймворк<br/>корректности"]
-        ZP --> FPF
-    end
-
-    subgraph pair["<b>ПАРА: ТЫ + ИИ</b>"]
-        direction LR
-        USER["<b>Ты</b><br/>Принимаешь решения<br/>Мыслишь, направляешь<br/>Создаёшь знания"]
-        AI["<b>Claude Code</b><br/>Усиливает, структурирует<br/>Берёт рутину<br/>Использует твои знания"]
-        USER <-->|"сотрудничество"| AI
-    end
-
-    subgraph knowledge["<b>ЗНАНИЯ</b>"]
-        direction LR
+        THEORIES["<b>Теории</b><br/>Системное мышление<br/>Методология, менеджмент"]
         EXO["<b>Экзокортекс</b><br/>Вторая память:<br/>планы, контекст, выводы"]
         PACK["<b>Pack</b><br/>Вторые принципы:<br/>твои доменные знания"]
     end
 
-    subgraph practice["<b>ПРАКТИКА</b>"]
+    subgraph culture["<b>КУЛЬТУРА РАБОТЫ</b>"]
         direction LR
-        TOOLS["<b>VS Code + GitHub</b><br/>Редактор + хранилище"]
-        BOT["<b>Бот @aist_me_bot</b><br/>Помощник<br/>в Telegram"]
-        ORZ["<b>Ритуалы ОРЗ</b><br/>Открытие → Работа<br/>→ Закрытие"]
+        PROTOCOLS["<b>Протоколы</b><br/>ОРЗ, АрхГейт<br/>Day Open/Close"]
+        SKILLS["<b>Навыки</b><br/>Capture, Self-correction<br/>Различения"]
+        FORMATS["<b>Форматы</b><br/>Pack-структура<br/>WP-context"]
     end
 
-    principles -->|"формируют мышление"| USER
-    principles -->|"встроены в правила"| AI
-    USER -->|"создаёт"| PACK
-    AI -->|"структурирует"| EXO
-    PACK -->|"обогащает"| AI
-    EXO -->|"контекст для"| ORZ
-    PACK -->|"знания для"| BOT
-    knowledge --> practice
+    subgraph mastery["<b>МОДЕЛЬ МАСТЕРСТВА</b>"]
+        T1["T1 Старт"] --> T2["T2 Практика"] --> T3["T3 Рост"] --> T4["T4 Мастерство"]
+    end
 
-    style principles fill:#fce4ec,stroke:#e53935,stroke-width:2px
+    subgraph community["<b>СООБЩЕСТВО</b>"]
+        COMM["<b>Среда созидателей</b><br/>Обмен, ревью, поддержка"]
+    end
+
+    subgraph pair["<b>ПАРА: ТЫ + ИИ</b>"]
+        direction LR
+        USER["<b>Ты</b><br/>Принимаешь решения<br/>Мыслишь, направляешь"]
+        AI["<b>Claude Code</b><br/>Усиливает, структурирует<br/>Берёт рутину"]
+        USER <-->|"сотрудничество"| AI
+    end
+
+    core -->|"чем думаешь"| pair
+    culture -->|"как работаешь"| pair
+    mastery -->|"куда растёшь"| pair
+    community -->|"где живёшь"| pair
+
+    style core fill:#fce4ec,stroke:#e53935,stroke-width:2px
+    style culture fill:#fff3e0,stroke:#fb8c00,stroke-width:2px
+    style mastery fill:#e8f5e9,stroke:#43a047,stroke-width:2px
+    style community fill:#e3f2fd,stroke:#1e88e5,stroke-width:2px
     style pair fill:#f3e5f5,stroke:#8e24aa,stroke-width:2px
-    style knowledge fill:#fff3e0,stroke:#fb8c00,stroke-width:2px
-    style practice fill:#e8f5e9,stroke:#43a047,stroke-width:2px
 ```
 
 ---
@@ -64,7 +63,7 @@ graph LR
     S2["<b>Шаг 2</b><br/>Установи<br/><i>~20 мин</i><br/>────────<br/>VS Code + Claude Code<br/>+ GitHub аккаунт"]
     S3["<b>Шаг 3</b><br/>Первая сессия<br/><i>~30 мин</i><br/>────────<br/>Стратегический документ<br/>+ план на неделю"]
     S4["<b>Шаг 4</b><br/>Практика<br/><i>1-2 недели</i><br/>────────<br/>Ритуалы ОРЗ<br/>каждый день"]
-    S5["<b>Шаг 5</b><br/>Мышление<br/><i>свой темп</i><br/>────────<br/>Системное мышление<br/>и принципы"]
+    S5["<b>Шаг 5</b><br/>Теории<br/><i>свой темп</i><br/>────────<br/>Системное мышление<br/>и курсы ШСМ"]
 
     S1 -->|"ИИ поможет"| S2
     S2 -->|"Claude ведёт"| S3
@@ -101,6 +100,48 @@ graph TD
 
 ---
 
+## Схема 3.5. Культура работы — три типа элементов
+
+> 14 элементов культуры работы IWE, разделённых на три типа. Культура — то, за что платят.
+
+```mermaid
+graph TD
+    subgraph culture["<b>КУЛЬТУРА РАБОТЫ (14 элементов)</b>"]
+        direction TB
+
+        subgraph protocols["<b>Протоколы</b> (делаешь по шагам)"]
+            P1["ОРЗ"]
+            P2["АрхГейт"]
+            P3["Day Open/Close"]
+            P4["Week Close"]
+        end
+
+        subgraph skills["<b>Навыки</b> (нарабатываешь практикой)"]
+            S1["Capture"]
+            S2["Self-correction"]
+            S3["Различения"]
+            S4["WP Gate"]
+        end
+
+        subgraph formats["<b>Форматы</b> (оформляешь по стандарту)"]
+            F1["Pack-структура"]
+            F2["WP-context"]
+            F3["Collapsible sections"]
+        end
+    end
+
+    protocols -->|"формализовано"| RESULT["<b>Результат:</b><br/>поставленная культура работы<br/>= стиль жизни созидателя"]
+    skills -->|"по ситуации"| RESULT
+    formats -->|"по стандарту"| RESULT
+
+    style protocols fill:#fce4ec,stroke:#e53935,stroke-width:2px
+    style skills fill:#fff3e0,stroke:#fb8c00,stroke-width:2px
+    style formats fill:#e8f5e9,stroke:#43a047,stroke-width:2px
+    style RESULT fill:#f3e5f5,stroke:#8e24aa,stroke-width:2px
+```
+
+---
+
 ## Схема 4. Уровни освоения (тиры)
 
 > Начинай с T1. Добавляй компоненты по мере готовности.
@@ -124,32 +165,35 @@ graph BT
 
 ---
 
-## Схема 5. Иерархия принципов — кто создаёт, кто использует
+## Схема 5. Теории → Принципы → Практика
 
-> Принципы текут сверху вниз. Знания — снизу вверх (от твоего опыта обратно в Pack).
+> За IWE стоят теории (ШСМ). Теории порождают принципы. Принципы встроены в ИИ и изучаются тобой.
 
 ```mermaid
 graph TD
-    ZP["<b>Нулевые принципы (ZP)</b><br/>Базовые правила мышления<br/><i>Даны платформой</i>"]
-    FPF["<b>Первые принципы (FPF)</b><br/>Фреймворк корректности<br/><i>Даны платформой</i>"]
+    THEORIES["<b>ТЕОРИИ</b><br/>Системное мышление, методология<br/>менеджмент, инженерия<br/><i>Курсы ШСМ</i>"]
+
+    ZP["<b>Нулевые принципы (ZP)</b><br/>Базовые правила мышления<br/><i>Даны IWE</i>"]
+    FPF["<b>Первые принципы (FPF)</b><br/>Фреймворк корректности<br/><i>Даны IWE</i>"]
     PACK["<b>Вторые принципы (Pack)</b><br/>Доменные знания<br/><i>Создаёшь ты</i>"]
     DS["<b>Третьи принципы (DS)</b><br/>Реализация<br/><i>Создаёшь ты + ИИ</i>"]
 
+    THEORIES -->|"порождают"| ZP
     ZP -->|"формируют"| FPF
     FPF -->|"направляют"| PACK
     PACK -->|"определяют"| DS
 
-    USER["<b>Ты</b><br/>Изучаешь → системное мышление"]
-    AI["<b>ИИ</b><br/>Принципы встроены в правила"]
+    USER["<b>Ты</b><br/>Изучаешь теории →<br/>системное мышление"]
+    AI["<b>ИИ</b><br/>Теории встроены в правила"]
 
-    ZP -.->|"изучаешь"| USER
-    FPF -.->|"изучаешь"| USER
+    THEORIES -.->|"изучаешь"| USER
     ZP -.->|"встроены"| AI
     FPF -.->|"встроены"| AI
     USER -->|"создаёт"| PACK
     PACK -->|"обогащает"| AI
     AI -->|"помогает структурировать"| PACK
 
+    style THEORIES fill:#e8eaf6,stroke:#3f51b5,stroke-width:2px
     style ZP fill:#fce4ec,stroke:#e53935,stroke-width:2px
     style FPF fill:#fce4ec,stroke:#e53935,stroke-width:2px
     style PACK fill:#fff3e0,stroke:#fb8c00,stroke-width:2px
@@ -160,9 +204,9 @@ graph TD
 
 ---
 
-## Схема 6. Экзоскелет vs Протез
+## Схема 6. Экзотело vs Протез
 
-> Ключевое различение IWE: ИИ **усиливает** мышление, а не **заменяет** его.
+> Ключевое различение IWE: ИИ **расширяет** мышление, а не **заменяет** его. IWE = экзотело для мышления.
 
 ```mermaid
 graph LR
@@ -174,7 +218,7 @@ graph LR
         B1 --> B2 --> B3
     end
 
-    subgraph good["<b>ЭКЗОСКЕЛЕТ (IWE)</b>"]
+    subgraph good["<b>ЭКЗОТЕЛО (IWE)</b>"]
         direction TB
         G1["ИИ берёт рутину"]
         G2["Ты думаешь<br/>лучше и быстрее"]
@@ -198,9 +242,9 @@ graph LR
     P2["Планы<br/>не работают"]
     P3["ИИ не помогает<br/>по-настоящему"]
 
-    S1["<b>Экзокортекс</b><br/>+ Pack<br/>+ GitHub"]
-    S2["<b>Ритуалы ОРЗ</b><br/>+ Claude Code"]
-    S3["<b>Claude Code</b><br/>+ экзокортекс<br/>(персональный)"]
+    S1["<b>Ядро мышления</b><br/>Экзокортекс + Pack<br/>+ GitHub"]
+    S2["<b>Культура работы</b><br/>Ритуалы ОРЗ<br/>+ Claude Code"]
+    S3["<b>Ядро + культура</b><br/>Claude Code<br/>+ экзокортекс"]
 
     P1 -->|"решает"| S1
     P2 -->|"решает"| S2
@@ -216,4 +260,4 @@ graph LR
 
 ---
 
-*Создан: 2026-03-17 | WP-120 | [FMT-exocortex-template](https://github.com/TserenTserenov/FMT-exocortex-template)*
+*Создан: 2026-03-17 | Обновлён: 2026-03-27 | WP-120 | [FMT-exocortex-template](https://github.com/TserenTserenov/FMT-exocortex-template)*

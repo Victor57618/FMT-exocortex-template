@@ -2,7 +2,9 @@
 # daily-report.sh — ежедневный отчёт работы scheduler
 #
 # Формирует отчёт: что должно было сработать, что сработало, что нет.
-# Результат: DS-strategy/current/SchedulerReport YYYY-MM-DD.md
+#
+# Если DS-agent-workspace/ существует → пишет туда (scheduler/reports/).
+# Иначе → DS-strategy/current/ (обратная совместимость).
 #
 # Использование:
 #   daily-report.sh           # сформировать отчёт за сегодня
@@ -14,8 +16,20 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 STATE_DIR="$HOME/.local/state/exocortex"
 LOG_DIR="{{HOME_DIR}}/logs/synchronizer"
 STRATEGY_DIR="{{WORKSPACE_DIR}}/DS-strategy"
-REPORT_DIR="$STRATEGY_DIR/current"
-ARCHIVE_DIR="$STRATEGY_DIR/archive/scheduler-reports"
+
+# Agent Workspace: если существует — отчёты идут туда
+AGENT_WORKSPACE="{{WORKSPACE_DIR}}/DS-agent-workspace"
+if [ -d "$AGENT_WORKSPACE/.git" ]; then
+    REPORT_DIR="$AGENT_WORKSPACE/scheduler/reports"
+    ARCHIVE_DIR="$AGENT_WORKSPACE/scheduler/reports/archive"
+    COMMIT_DIR="$AGENT_WORKSPACE"
+    COMMIT_ADD_PATHS=("scheduler/reports/")
+else
+    REPORT_DIR="$STRATEGY_DIR/current"
+    ARCHIVE_DIR="$STRATEGY_DIR/archive/scheduler-reports"
+    COMMIT_DIR="$STRATEGY_DIR"
+    COMMIT_ADD_PATHS=("current/SchedulerReport"*.md "archive/scheduler-reports/")
+fi
 
 DATE=$(date +%Y-%m-%d)
 DOW=$(date +%u)
@@ -230,7 +244,7 @@ archive_old_reports() {
         local basename
         basename=$(basename "$old_report")
         [[ "$basename" == *"$DATE"* ]] && continue
-        mv "$old_report" "$ARCHIVE_DIR/" 2>/dev/null || true
+        git -C "$COMMIT_DIR" mv "$old_report" "$ARCHIVE_DIR/" 2>/dev/null || mv "$old_report" "$ARCHIVE_DIR/"
         log "Archived: $basename"
         count=$((count + 1))
     done
@@ -249,14 +263,24 @@ else
     echo "$REPORT" > "$REPORT_FILE"
     log "Report written: $REPORT_FILE"
 
-    cd "$STRATEGY_DIR"
+    cd "$COMMIT_DIR"
+    # Staging Isolation: stash → pull → pop → reset → add only own files
+    # Without stash, pull --rebase fails when Claude sessions leave unstaged changes
+    local stash_count_before stash_count_after
+    stash_count_before=$(git stash list 2>/dev/null | wc -l)
+    git stash -u --quiet 2>/dev/null || true
     git pull --rebase --quiet 2>/dev/null || log "WARN: pull --rebase failed (offline?)"
+    stash_count_after=$(git stash list 2>/dev/null | wc -l)
+    if [ "$stash_count_after" -gt "$stash_count_before" ]; then
+        git stash pop --quiet 2>/dev/null || log "WARN: stash pop failed"
+    fi
     git reset --quiet 2>/dev/null || true
 
     archive_old_reports
 
-    git add "current/SchedulerReport"*.md 2>/dev/null || true
-    git add "archive/scheduler-reports/" 2>/dev/null || true
+    for p in "${COMMIT_ADD_PATHS[@]}"; do
+        git add "$p" 2>/dev/null || true
+    done
 
     if ! git diff --cached --quiet 2>/dev/null; then
         git commit -m "auto: scheduler report $DATE" --quiet

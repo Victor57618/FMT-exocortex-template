@@ -6,7 +6,7 @@ name: IWE Cloud Scheduler (базовый)
 # - Health check ночной автоматики
 #
 # Для пользователей шаблона FMT-exocortex-template.
-# Подробности: DP.SC.019 (PACK-digital-platform/08-use-cases/)
+# Подробности: DP.SC.019 (PACK-digital-platform/08-service-clauses/)
 #
 # Настройка:
 # 1. Создайте GitHub Secret: STRATEGY_REPO_TOKEN (PAT с доступом к DS-strategy)

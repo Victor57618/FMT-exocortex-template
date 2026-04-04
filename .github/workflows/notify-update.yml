@@ -81,16 +81,68 @@ jobs:
 
           echo "$VERSION" > /tmp/changelog_version.txt
 
-          # Проверяем, есть ли записи changelog за эти даты
+          # Проверяем, есть ли содержательные записи changelog за эти даты
+          # Пустой файл или только пробелы/переводы строк = нет changelog
           if [ ! -s /tmp/changelog_entry.txt ]; then
             echo "No changelog entries for $TODAY or $YESTERDAY — skipping notification"
             echo "has_changelog=false" >> "$GITHUB_OUTPUT"
           else
-            echo "has_changelog=true" >> "$GITHUB_OUTPUT"
+            # Проверяем, что changelog содержит хотя бы один буллет-пункт (- или *)
+            # Без этого changelog может содержать только заголовки секций без пунктов
+            if ! grep -qE '^\s*[-*]' /tmp/changelog_entry.txt; then
+              echo "Changelog has no substantive entries (no bullet points) — skipping"
+              echo "has_changelog=false" >> "$GITHUB_OUTPUT"
+            else
+              echo "has_changelog=true" >> "$GITHUB_OUTPUT"
+            fi
           fi
 
-      - name: Send notification via bot webhook
+      - name: Check significance of changes
         if: steps.check.outputs.has_changes == 'true' && steps.changelog.outputs.has_changelog == 'true'
+        id: significance
+        run: |
+          # Проверяем, есть ли значимые изменения для пользователей
+          # Незначительные: только CLAUDE.md, memory/, .claude/rules/, version bump, typo fix
+          # Значимые: скиллы, роли, протоколы, install/update, docs, новые файлы
+
+          CHANGELOG=$(cat /tmp/changelog_entry.txt)
+
+          # Список файлов, изменённых за 24ч
+          CHANGED_FILES=$(git log --since="24 hours ago" --name-only --pretty=format: | sort -u | grep -v '^$')
+
+          # Паттерны значимых изменений (в changelog-тексте)
+          SIGNIFICANT_PATTERNS="skill|роль|протокол|Added|Добавлено|install|update\.sh|setup|SETUP-GUIDE|LEARNING-PATH|скилл|новый|new"
+
+          # Паттерны значимых файлов
+          SIGNIFICANT_FILES="\.sh$|skills/|roles/|docs/|install|setup|synchronizer/"
+
+          # Проверяем changelog на значимые ключевые слова
+          if echo "$CHANGELOG" | grep -qiE "$SIGNIFICANT_PATTERNS"; then
+            echo "is_significant=true" >> "$GITHUB_OUTPUT"
+            echo "Significant: changelog contains notable changes"
+            exit 0
+          fi
+
+          # Проверяем изменённые файлы на значимые паттерны
+          if echo "$CHANGED_FILES" | grep -qE "$SIGNIFICANT_FILES"; then
+            echo "is_significant=true" >> "$GITHUB_OUTPUT"
+            echo "Significant: changed files include user-facing components"
+            exit 0
+          fi
+
+          # Считаем буллет-пункты в changelog — если ≥3, считаем значимым (накопительный эффект)
+          BULLET_COUNT=$(grep -cE '^\s*[-*]' /tmp/changelog_entry.txt || true)
+          if [ "$BULLET_COUNT" -ge 3 ]; then
+            echo "is_significant=true" >> "$GITHUB_OUTPUT"
+            echo "Significant: $BULLET_COUNT changelog entries (cumulative)"
+            exit 0
+          fi
+
+          echo "is_significant=false" >> "$GITHUB_OUTPUT"
+          echo "Not significant: only minor/internal changes ($BULLET_COUNT entries, no significant patterns)"
+
+      - name: Send notification via bot webhook
+        if: steps.check.outputs.has_changes == 'true' && steps.changelog.outputs.has_changelog == 'true' && steps.significance.outputs.is_significant == 'true'
         env:
           BOT_WEBHOOK_URL: ${{ secrets.BOT_WEBHOOK_URL }}
           TEMPLATE_WEBHOOK_SECRET: ${{ secrets.TEMPLATE_WEBHOOK_SECRET }}

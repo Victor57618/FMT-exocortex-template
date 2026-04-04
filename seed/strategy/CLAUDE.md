@@ -63,7 +63,7 @@ done
 | Директория | Содержание |
 |------------|------------|
 | `docs/` | Долгоживущие документы: Strategy.md, Dissatisfactions.md, Session Agenda.md |
-| `current/` | Регулярно обновляемые: WeekPlan, WeekReport, DayPlan |
+| `current/` | Регулярно обновляемые: WeekPlan (с секцией «Итоги W{N}»), DayPlan |
 | `archive/` | Старые планы и отчёты |
 | `inbox/` | Входящие заметки, черновики |
 | `exocortex/` | Backup memory/ + CLAUDE.md |

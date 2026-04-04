@@ -1,0 +1,46 @@
+# Exocortex Parameters (пользовательские настройки)
+#
+# Этот файл содержит персистентные параметры, влияющие на поведение протоколов.
+# update.sh НЕ перезаписывает этот файл — ваши настройки в безопасности.
+#
+# Формат: YAML. Протоколы читают params.yaml и адаптируют поведение.
+
+# === Протоколы ===
+
+# Day Open: проверка видео за предыдущий день
+video_check: true
+
+# Day Close: расчёт мультипликатора IWE (требует WakaTime API key)
+multiplier_enabled: true
+
+# Day Close: рефлексия (вопросы в конце дня)
+reflection_enabled: false
+
+# Week Close: ротация уроков в MEMORY.md
+lesson_rotation: true
+
+# === Верификация ===
+
+# Автоматическая верификация кода через sub-agent Haiku
+auto_verify_code: true
+
+# Верификация Quick Close через sub-agent Haiku
+verify_quick_close: true
+
+# === Уведомления ===
+
+# Telegram уведомления от ролей (strategist, extractor, synchronizer)
+telegram_notifications: true
+
+# === MCP / Capture ===
+
+# Уровень инициативы агента при Capture-to-Pack (WP-189 Ф2):
+#   manual  — только по явной команде пользователя
+#   propose — агент предлагает capture, пользователь подтверждает одним кликом (default)
+#   auto    — агент пишет без подтверждения
+capture_autonomy: propose
+
+# === Расширения ===
+
+# Директория с пользовательскими расширениями протоколов
+extensions_dir: extensions

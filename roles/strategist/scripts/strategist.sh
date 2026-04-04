@@ -4,6 +4,10 @@
 
 set -e
 
+# Предотвращаем сон: -i (idle, работает на батарее) -d (display) -u (user activity)
+# Флаг -s (system sleep) не используем — он НЕ работает на батарее (OBC может переключить профиль)
+caffeinate -diu -w $$ &
+
 # Конфигурация
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_DIR="$(dirname "$SCRIPT_DIR")"
@@ -133,18 +137,27 @@ already_ran_today() {
 }
 
 # File-based lock to prevent concurrent execution (RunAtLoad + CalendarInterval race)
+# mkdir — атомарная операция на POSIX, исключает TOCTOU race condition
 LOCK_DIR="$LOG_DIR/locks"
 mkdir -p "$LOCK_DIR"
 
 acquire_lock() {
     local scenario="$1"
-    local lockfile="$LOCK_DIR/${scenario}.${DATE}.lock"
-    if ! mkdir "$lockfile" 2>/dev/null; then
-        log "SKIP: $scenario already running (lock exists: $lockfile)"
-        exit 2  # non-zero → scheduler won't mark_done
+    local lockdir="$LOCK_DIR/${scenario}.${DATE}.lck"
+    if ! mkdir "$lockdir" 2>/dev/null; then
+        local pid
+        pid=$(cat "$lockdir/pid" 2>/dev/null)
+        if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+            log "SKIP: $scenario already running (PID $pid)"
+            exit 2  # non-zero → scheduler won't mark_done
+        else
+            log "WARN: removing stale lock (PID $pid no longer exists): $lockdir"
+            rm -rf "$lockdir"
+            mkdir "$lockdir" || { log "ERROR: failed to acquire lock for $scenario"; exit 1; }
+        fi
     fi
-    # Auto-cleanup lock on exit
-    trap "rmdir '$lockfile' 2>/dev/null" EXIT
+    echo $$ > "$lockdir/pid" || { rm -rf "$lockdir"; log "ERROR: failed to write PID for $scenario"; exit 1; }
+    trap "rm -rf \"$lockdir\" 2>/dev/null" EXIT
 }
 
 # Читаем strategy_day из конфига (L4 Personal)
@@ -225,20 +238,23 @@ case "$1" in
         # Canary: count bold notes before (exclude 🔄 — deferred ideas stay bold by design)
         FLEETING="$WORKSPACE/inbox/fleeting-notes.md"
         BOLD_BEFORE=$(grep -c '^\*\*' "$FLEETING" 2>/dev/null || echo 0)
-        BOLD_NEW_BEFORE=$(grep '^\*\*' "$FLEETING" 2>/dev/null | grep -v '🔄' | grep -c '.' || echo 0)
+        BOLD_NEW_BEFORE=$(grep -vc '🔄' <(grep '^\*\*' "$FLEETING" 2>/dev/null) 2>/dev/null || echo 0)
         log "Canary: $BOLD_BEFORE bold total ($BOLD_NEW_BEFORE new, $(( BOLD_BEFORE - BOLD_NEW_BEFORE )) deferred 🔄)"
 
         run_claude "note-review"
 
-        # Canary: count bold notes after — only NEW bold (without 🔄) should decrease
+        # Canary: count bold notes after (needs to be visible for alert at line ~274)
         BOLD_AFTER=$(grep -c '^\*\*' "$FLEETING" 2>/dev/null || echo 0)
-        BOLD_NEW_AFTER=$(grep '^\*\*' "$FLEETING" 2>/dev/null | grep -v '🔄' | grep -c '.' || echo 0)
-        log "Canary: $BOLD_AFTER bold total ($BOLD_NEW_AFTER new)"
-        NON_BOLD=$(grep -c '^[^*#>-]' "$FLEETING" 2>/dev/null || echo 0)
-        log "Non-bold content lines: $NON_BOLD"
-        if [ "$BOLD_NEW_AFTER" -ge "$BOLD_NEW_BEFORE" ] && [ "$BOLD_NEW_BEFORE" -gt 0 ]; then
-            log "WARN: Note-Review Step 10 may have failed — new bold notes did not decrease ($BOLD_NEW_BEFORE → $BOLD_NEW_AFTER)"
-        fi
+        BOLD_NEW_AFTER=$(grep -vc '🔄' <(grep '^\*\*' "$FLEETING" 2>/dev/null) 2>/dev/null || echo 0)
+        # Non-blocking diagnostic (isolated from set -e to protect cleanup below)
+        (
+            log "Canary: $BOLD_AFTER bold total ($BOLD_NEW_AFTER new)"
+            NON_BOLD=$(grep -c '^[^*#>-]' "$FLEETING" 2>/dev/null || echo 0)
+            log "Non-bold content lines: $NON_BOLD"
+            if [ "$BOLD_NEW_AFTER" -ge "$BOLD_NEW_BEFORE" ] && [ "$BOLD_NEW_BEFORE" -gt 0 ]; then
+                log "WARN: Note-Review Step 10 may have failed — new bold notes did not decrease ($BOLD_NEW_BEFORE → $BOLD_NEW_AFTER)"
+            fi
+        ) || true
 
         # Deterministic cleanup: archive non-bold, non-🔄 notes (safety net for LLM Step 10)
         log "Running deterministic cleanup..."

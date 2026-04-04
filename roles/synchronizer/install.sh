@@ -42,8 +42,14 @@ echo "Verify: launchctl list | grep exocortex"
 echo "Status: bash $SCRIPT_DIR/scripts/scheduler.sh status"
 echo ""
 echo "Auto-wake (recommended): plan ready before you wake up"
-echo "  sudo pmset repeat wakeorpoweron MTWRFSU 03:55:00"
-echo "  (Mac must be on power. Cancel: sudo pmset repeat cancel)"
+if [[ "$(uname)" == "Darwin" ]]; then
+    echo "  sudo pmset repeat wakeorpoweron MTWRFSU 03:55:00"
+    echo "  sudo pmset -b sleep 0 && sudo pmset -b standby 0  # laptop: prevent sleep on battery profile"
+    echo "  (Cancel: sudo pmset repeat cancel)"
+else
+    echo "  Linux: sudo rtcwake or systemd timer with WakeSystem=true"
+    echo "  See docs/SETUP-GUIDE.md for details"
+fi
 echo ""
 echo "Telegram (optional): create ~/.config/aist/env with:"
 echo "  export TELEGRAM_BOT_TOKEN=\"your-token\""

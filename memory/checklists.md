@@ -22,7 +22,7 @@
 
 - [ ] `grep -r "Github/<old-path>/"` по ВСЕМ репо — найти ВСЕ внутренние ссылки
 - [ ] Скрипты (.sh): hardcoded пути `$HOME/Github/...`
-- [ ] Промпты (.md): `{{WORKSPACE_DIR}}/...` пути к config/routing
+- [ ] Промпты (.md): `{{HOME_DIR}}/IWE/...` пути к config/routing
 - [ ] Конфиги (config.yaml): `script:` поля
 - [ ] LaunchD templates (.plist): `<string>/Users/.../</string>`
 - [ ] Загруженные plist в `~/Library/LaunchAgents/` (отдельно от шаблонов в репо!)
@@ -30,7 +30,7 @@
 - [ ] README.md: примеры вызовов
 - [ ] CLAUDE.md (корневой + репо): навигация
 
-> **Урок (2026-02-21):** WP-51 переместил DS-ai-systems в DS-IT-systems/DS-ai-systems. Loaded plist обновили, но 18 файлов внутри (скрипты, промпты, config, templates, GH Actions) остались на старых путях. Результат: scheduler ставил mark_done даже при падении → 2 дня без DayPlan и note-review, fleeting-notes копились.
+> **Урок:** При перемещении репо (переименовании путей) — проверяй ВСЕ внутренние ссылки (скрипты, промпты, config, templates, GH Actions). Иначе scheduler может ставить mark_done даже при падении.
 
 ## При ручной очистке fleeting-notes (🔄 заметки)
 
