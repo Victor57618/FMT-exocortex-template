@@ -22,6 +22,7 @@ EXOCORTEX_DST="$DS_STRATEGY/exocortex"
 SELECTIVE_REINDEX="$WORKSPACE_DIR/DS-MCP/knowledge-mcp/scripts/selective-reindex.sh"
 LINEAR_SYNC="$WORKSPACE_DIR/DS-IT-systems/DS-ai-systems/synchronizer/scripts/linear-sync.sh"
 FPF_DIR="$WORKSPACE_DIR/FPF"
+SPF_DIR="$WORKSPACE_DIR/SPF"
 LOG_FILE="$WORKSPACE_DIR/DS-agent-workspace/scheduler/day-close.log"
 # === /КОНФИГУРАЦИЯ ===
 
@@ -106,7 +107,7 @@ do_linear() {
 
 # --- Шаг 4: FPF update ---
 do_fpf_update() {
-  log "Шаг 4/4: FPF git pull"
+  log "Шаг 4/5: FPF git pull"
 
   if [ ! -d "$FPF_DIR/.git" ]; then
     warn "  FPF репозиторий не найден: $FPF_DIR — пропуск"
@@ -122,12 +123,30 @@ do_fpf_update() {
   fi
 }
 
+# --- Шаг 5: SPF update ---
+do_spf_update() {
+  log "Шаг 5/5: SPF git pull"
+
+  if [ ! -d "$SPF_DIR/.git" ]; then
+    warn "  SPF репозиторий не найден: $SPF_DIR — пропуск"
+    return 0
+  fi
+
+  local result
+  result=$(git -C "$SPF_DIR" pull --rebase 2>&1)
+  if echo "$result" | grep -q "Already up to date"; then
+    log "  SPF уже актуален"
+  else
+    log "  SPF обновлён: $(echo "$result" | tail -1)"
+  fi
+}
+
 # --- Лог ---
 write_log() {
   local date_str
   date_str=$(date "+%Y-%m-%d %H:%M")
   mkdir -p "$(dirname "$LOG_FILE")"
-  echo "$date_str | day-close | backup=$1 reindex=$2 linear=$3 fpf=$4" >> "$LOG_FILE"
+  echo "$date_str | day-close | backup=$1 reindex=$2 linear=$3 fpf=$4 spf=$5" >> "$LOG_FILE"
 }
 
 # --- Main ---
@@ -137,6 +156,7 @@ main() {
   local run_reindex=false
   local run_linear=false
   local run_fpf=false
+  local run_spf=false
 
   for arg in "$@"; do
     case "$arg" in
@@ -144,9 +164,10 @@ main() {
       --reindex) run_reindex=true; do_all=false ;;
       --linear)  run_linear=true; do_all=false ;;
       --fpf)     run_fpf=true; do_all=false ;;
+      --spf)     run_spf=true; do_all=false ;;
       --help|-h)
-        echo "Использование: day-close.sh [--backup] [--reindex] [--linear] [--fpf]"
-        echo "  Без аргументов — все четыре шага"
+        echo "Использование: day-close.sh [--backup] [--reindex] [--linear] [--fpf] [--spf]"
+        echo "  Без аргументов — все пять шагов"
         exit 0
         ;;
       *)
@@ -161,11 +182,12 @@ main() {
     run_reindex=true
     run_linear=true
     run_fpf=true
+    run_spf=true
   fi
 
   log "=== Day Close (автоматические шаги) ==="
 
-  local backup_status="skip" reindex_status="skip" linear_status="skip" fpf_status="skip"
+  local backup_status="skip" reindex_status="skip" linear_status="skip" fpf_status="skip" spf_status="skip"
 
   if $run_backup; then
     if do_backup; then backup_status="ok"; else backup_status="fail"; fi
@@ -183,10 +205,14 @@ main() {
     if do_fpf_update; then fpf_status="ok"; else fpf_status="fail"; fi
   fi
 
-  write_log "$backup_status" "$reindex_status" "$linear_status" "$fpf_status"
+  if $run_spf; then
+    if do_spf_update; then spf_status="ok"; else spf_status="fail"; fi
+  fi
+
+  write_log "$backup_status" "$reindex_status" "$linear_status" "$fpf_status" "$spf_status"
 
   log "=== Готово ==="
-  log "  backup=$backup_status  reindex=$reindex_status  linear=$linear_status  fpf=$fpf_status"
+  log "  backup=$backup_status  reindex=$reindex_status  linear=$linear_status  fpf=$fpf_status  spf=$spf_status"
 }
 
 main "$@"
