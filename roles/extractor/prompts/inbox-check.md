@@ -22,12 +22,12 @@
 
 ### Шаг 0: Прочитать конфигурацию
 
-1. Прочитай `{{WORKSPACE_DIR}}/FMT-exocortex-template/roles/extractor/config/routing.md` — таблицы маршрутизации.
-2. Прочитай `{{WORKSPACE_DIR}}/FMT-exocortex-template/roles/extractor/config/feedback-log.md` — лог отклонённых кандидатов. Если capture похож на ранее отклонённый → пропусти.
+1. Прочитай `/c/Users/tocpeople/IWE/FMT-exocortex-template/roles/extractor/config/routing.md` — таблицы маршрутизации.
+2. Прочитай `/c/Users/tocpeople/IWE/FMT-exocortex-template/roles/extractor/config/feedback-log.md` — лог отклонённых кандидатов. Если capture похож на ранее отклонённый → пропусти.
 
 ### Шаг 1: Проверить inbox
 
-1. Прочитай `{{WORKSPACE_DIR}}/DS-strategy/inbox/captures.md`
+1. Прочитай `/c/Users/tocpeople/IWE/DS-strategy/inbox/captures.md`
 2. Найди все pending записи (секции `### ...` без метки `[processed]`)
 3. Если pending записей нет → напиши в лог `No pending captures in inbox` и **заверши работу**
 4. Если pending > 5 → возьми первые 5 (по порядку в файле)
@@ -70,7 +70,7 @@
 
 ### Шаг 3: Сгенерировать Extraction Report
 
-Создай файл отчёта: `{{WORKSPACE_DIR}}/DS-strategy/inbox/extraction-reports/{YYYY-MM-DD}-inbox-check.md`
+Создай файл отчёта: `/c/Users/tocpeople/IWE/DS-strategy/inbox/extraction-reports/{YYYY-MM-DD}-inbox-check.md`
 
 Если файл с таким именем уже существует, добавь суффикс: `{YYYY-MM-DD}-inbox-check-2.md`.
 

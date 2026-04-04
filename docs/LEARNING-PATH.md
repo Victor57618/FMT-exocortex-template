@@ -244,7 +244,7 @@ FMT-exocortex-template/
 #### Что делает setup.sh
 
 1. Форкает шаблон → твой GitHub аккаунт
-2. Подставляет 7 плейсхолдеров (`{{GITHUB_USER}}`, `{{WORKSPACE_DIR}}` и др.)
+2. Подставляет 7 плейсхолдеров (`Victor57618`, `/c/Users/tocpeople/IWE` и др.)
 3. Копирует `CLAUDE.md` → корень рабочей директории
 4. Копирует `memory/*.md` → `~/.claude/projects/.../memory/`
 5. Создаёт `DS-strategy/` из `seed/strategy/` (отдельный приватный репо)
@@ -298,7 +298,7 @@ FMT-exocortex-template/
 |---------|----------|--------|----------|
 | **Конфиг** | yaml-файл с параметрами | `strategy_day: saturday` | Настройки поведения агентов |
 | **AUTHOR-ONLY зоны** | HTML-маркеры в протоколах | Проверки специфичных систем | Расширение протоколов без конфликтов с update.sh |
-| **Плейсхолдеры** | `{{WORKSPACE_DIR}}` и др. | Пути, имя пользователя GitHub | Автоподстановка при setup |
+| **Плейсхолдеры** | `/c/Users/tocpeople/IWE` и др. | Пути, имя пользователя GitHub | Автоподстановка при setup |
 
 Подробнее о AUTHOR-ONLY зонах: [CLAUDE.md §7](../CLAUDE.md).
 

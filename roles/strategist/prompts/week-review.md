@@ -4,23 +4,23 @@
 > Записывает итоги недели в секцию WeekPlan + создаёт пост для клуба. Служит входом для session-prep (Пн 4:00).
 > **WeekReport как отдельный файл НЕ создаётся** (deprecated 2026-03-25). Итоги — секция в WeekPlan.
 
-Источник сценария: {{WORKSPACE_DIR}}/PACK-digital-platform/pack/digital-platform/02-domain-entities/DP.ROLE.012-strategist/scenarios/scheduled/03-week-review.md
+Источник сценария: /c/Users/tocpeople/IWE/PACK-digital-platform/pack/digital-platform/02-domain-entities/DP.ROLE.012-strategist/scenarios/scheduled/03-week-review.md
 
 ## Контекст
 
-- **WeekPlan:** {{WORKSPACE_DIR}}/DS-strategy/current/WeekPlan W*.md
-- **Шаблон:** {{WORKSPACE_DIR}}/PACK-digital-platform/pack/digital-platform/02-domain-entities/DP.ROLE.012-strategist/templates/reviews/weekly-review.md
+- **WeekPlan:** /c/Users/tocpeople/IWE/DS-strategy/current/WeekPlan W*.md
+- **Шаблон:** /c/Users/tocpeople/IWE/PACK-digital-platform/pack/digital-platform/02-domain-entities/DP.ROLE.012-strategist/templates/reviews/weekly-review.md
 
 ## Алгоритм
 
 ### 1. Сбор данных (Стратег собирает сам)
 
 ```bash
-# Для КАЖДОГО репо в {{WORKSPACE_DIR}}/:
-git -C {{WORKSPACE_DIR}}/<repo> log --since="last monday 00:00" --until="today 00:00" --oneline --no-merges
+# Для КАЖДОГО репо в /c/Users/tocpeople/IWE/:
+git -C /c/Users/tocpeople/IWE/<repo> log --since="last monday 00:00" --until="today 00:00" --oneline --no-merges
 ```
 
-- Пройди по ВСЕМ репозиториям в `{{WORKSPACE_DIR}}/`
+- Пройди по ВСЕМ репозиториям в `/c/Users/tocpeople/IWE/`
 - Загрузи текущий WeekPlan из `DS-strategy/current/`
 - Сопоставь коммиты с РП из WeekPlan
 - Определи статус каждого РП: done / partial / not started
@@ -73,7 +73,7 @@ git -C {{WORKSPACE_DIR}}/<repo> log --since="last monday 00:00" --until="today 0
 
 1. Переключись на **роль Автора (R4)** и на основе секции «Итоги W{N}» в WeekPlan сформируй пост для клуба.
 
-   **Обязательно прочитай** `{{WORKSPACE_DIR}}/DS-Knowledge-Index/CLAUDE.md` — полные инструкции роли Автора:
+   **Обязательно прочитай** `/c/Users/tocpeople/IWE/DS-Knowledge-Index/CLAUDE.md` — полные инструкции роли Автора:
    - § 2 — стандарт названий для итогов недели
    - § 3 — формат поста: аудитория `community`, структура для тега `итоги-недели` (4 уровня влияния, голос от первого лица, 400-700 слов)
 
@@ -89,7 +89,7 @@ git -C {{WORKSPACE_DIR}}/<repo> log --since="last monday 00:00" --until="today 0
 
    Выбери лучшее название сам (в автоматическом режиме нет пользователя для выбора).
 
-2. Создай файл `{{WORKSPACE_DIR}}/DS-Knowledge-Index/docs/{YYYY}/{YYYY-MM-DD}-week-review-w{N}.md`
+2. Создай файл `/c/Users/tocpeople/IWE/DS-Knowledge-Index/docs/{YYYY}/{YYYY-MM-DD}-week-review-w{N}.md`
 
 3. Frontmatter:
 
@@ -107,7 +107,7 @@ content_plan: null
 ---
 ```
 
-4. Обнови `{{WORKSPACE_DIR}}/DS-Knowledge-Index/docs/README.md` — добавь строку в начало текущего месяца
+4. Обнови `/c/Users/tocpeople/IWE/DS-Knowledge-Index/docs/README.md` — добавь строку в начало текущего месяца
 5. Закоммить и запушь `DS-Knowledge-Index` (git add docs/ && git commit && git push)
 
 **Шаблон секции «Итоги W{N}» в WeekPlan:**
@@ -156,7 +156,7 @@ content_plan: null
 3. Добавь строку:
 
 ```markdown
-**Пост итогов W{N-1}:** [название](https://github.com/{{GITHUB_USER}}/DS-Knowledge-Index/blob/main/docs/{YYYY}/{YYYY-MM-DD}-week-review-w{N-1}.md) — status: ready → авто-публикация Пн 07:14
+**Пост итогов W{N-1}:** [название](https://github.com/Victor57618/DS-Knowledge-Index/blob/main/docs/{YYYY}/{YYYY-MM-DD}-week-review-w{N-1}.md) — status: ready → авто-публикация Пн 07:14
 ```
 
 4. Закоммить вместе с остальными изменениями

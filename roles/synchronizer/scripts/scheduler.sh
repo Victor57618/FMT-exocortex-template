@@ -34,7 +34,7 @@ STATE_DIR="$HOME/.local/state/exocortex"
 LOG_DIR="$HOME/logs/synchronizer"
 LOG_FILE="$LOG_DIR/scheduler-$(date +%Y-%m-%d).log"
 
-ROLES_DIR="{{WORKSPACE_DIR}}/FMT-exocortex-template/roles"
+ROLES_DIR="/c/Users/tocpeople/IWE/FMT-exocortex-template/roles"
 NOTIFY_SH="$SCRIPT_DIR/notify.sh"
 
 # Таймаут на задачи (сек): предотвращает блокировку dispatch зависшей задачей
@@ -134,7 +134,7 @@ cleanup_state() {
 # Разделяет архивацию (мгновенно) и генерацию (15+ мин Claude Code).
 # Гарантирует: даже если генерация ещё не началась, старый план не висит в current/.
 pre_archive_dayplan() {
-    local strategy_dir="{{WORKSPACE_DIR}}/DS-strategy"
+    local strategy_dir="/c/Users/tocpeople/IWE/DS-strategy"
     local archive_dir="$strategy_dir/archive/day-plans"
     local moved=0
 

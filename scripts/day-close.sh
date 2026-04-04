@@ -23,6 +23,7 @@ SELECTIVE_REINDEX="$WORKSPACE_DIR/DS-MCP/knowledge-mcp/scripts/selective-reindex
 LINEAR_SYNC="$WORKSPACE_DIR/DS-IT-systems/DS-ai-systems/synchronizer/scripts/linear-sync.sh"
 FPF_DIR="$WORKSPACE_DIR/FPF"
 SPF_DIR="$WORKSPACE_DIR/SPF"
+PACK_PERSONAL_DIR="$WORKSPACE_DIR/PACK-personal"
 LOG_FILE="$WORKSPACE_DIR/DS-agent-workspace/scheduler/day-close.log"
 # === /КОНФИГУРАЦИЯ ===
 
@@ -125,7 +126,7 @@ do_fpf_update() {
 
 # --- Шаг 5: SPF update ---
 do_spf_update() {
-  log "Шаг 5/5: SPF git pull"
+  log "Шаг 5/6: SPF git pull"
 
   if [ ! -d "$SPF_DIR/.git" ]; then
     warn "  SPF репозиторий не найден: $SPF_DIR — пропуск"
@@ -141,12 +142,30 @@ do_spf_update() {
   fi
 }
 
+# --- Шаг 6: PACK-personal upstream update ---
+do_pack_personal_update() {
+  log "Шаг 6/6: PACK-personal upstream pull"
+
+  if [ ! -d "$PACK_PERSONAL_DIR/.git" ]; then
+    warn "  PACK-personal не найден: $PACK_PERSONAL_DIR — пропуск"
+    return 0
+  fi
+
+  local result
+  result=$(git -C "$PACK_PERSONAL_DIR" fetch upstream 2>&1 && git -C "$PACK_PERSONAL_DIR" rebase upstream/main 2>&1)
+  if echo "$result" | grep -q "is up to date"; then
+    log "  PACK-personal уже актуален"
+  else
+    log "  PACK-personal обновлён: $(echo "$result" | tail -1)"
+  fi
+}
+
 # --- Лог ---
 write_log() {
   local date_str
   date_str=$(date "+%Y-%m-%d %H:%M")
   mkdir -p "$(dirname "$LOG_FILE")"
-  echo "$date_str | day-close | backup=$1 reindex=$2 linear=$3 fpf=$4 spf=$5" >> "$LOG_FILE"
+  echo "$date_str | day-close | backup=$1 reindex=$2 linear=$3 fpf=$4 spf=$5 pack-personal=$6" >> "$LOG_FILE"
 }
 
 # --- Main ---
@@ -157,17 +176,19 @@ main() {
   local run_linear=false
   local run_fpf=false
   local run_spf=false
+  local run_pack_personal=false
 
   for arg in "$@"; do
     case "$arg" in
-      --backup)  run_backup=true; do_all=false ;;
-      --reindex) run_reindex=true; do_all=false ;;
-      --linear)  run_linear=true; do_all=false ;;
-      --fpf)     run_fpf=true; do_all=false ;;
-      --spf)     run_spf=true; do_all=false ;;
+      --backup)        run_backup=true; do_all=false ;;
+      --reindex)       run_reindex=true; do_all=false ;;
+      --linear)        run_linear=true; do_all=false ;;
+      --fpf)           run_fpf=true; do_all=false ;;
+      --spf)           run_spf=true; do_all=false ;;
+      --pack-personal) run_pack_personal=true; do_all=false ;;
       --help|-h)
-        echo "Использование: day-close.sh [--backup] [--reindex] [--linear] [--fpf] [--spf]"
-        echo "  Без аргументов — все пять шагов"
+        echo "Использование: day-close.sh [--backup] [--reindex] [--linear] [--fpf] [--spf] [--pack-personal]"
+        echo "  Без аргументов — все шесть шагов"
         exit 0
         ;;
       *)
@@ -183,11 +204,12 @@ main() {
     run_linear=true
     run_fpf=true
     run_spf=true
+    run_pack_personal=true
   fi
 
   log "=== Day Close (автоматические шаги) ==="
 
-  local backup_status="skip" reindex_status="skip" linear_status="skip" fpf_status="skip" spf_status="skip"
+  local backup_status="skip" reindex_status="skip" linear_status="skip" fpf_status="skip" spf_status="skip" pack_personal_status="skip"
 
   if $run_backup; then
     if do_backup; then backup_status="ok"; else backup_status="fail"; fi
@@ -209,10 +231,14 @@ main() {
     if do_spf_update; then spf_status="ok"; else spf_status="fail"; fi
   fi
 
-  write_log "$backup_status" "$reindex_status" "$linear_status" "$fpf_status" "$spf_status"
+  if $run_pack_personal; then
+    if do_pack_personal_update; then pack_personal_status="ok"; else pack_personal_status="fail"; fi
+  fi
+
+  write_log "$backup_status" "$reindex_status" "$linear_status" "$fpf_status" "$spf_status" "$pack_personal_status"
 
   log "=== Готово ==="
-  log "  backup=$backup_status  reindex=$reindex_status  linear=$linear_status  fpf=$fpf_status  spf=$spf_status"
+  log "  backup=$backup_status  reindex=$reindex_status  linear=$linear_status  fpf=$fpf_status  spf=$spf_status  pack-personal=$pack_personal_status"
 }
 
 main "$@"

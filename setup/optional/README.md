@@ -16,7 +16,7 @@ Monitors your coding activity via WakaTime and sends a macOS notification when y
 
 ```bash
 # 1. Replace placeholder with your workspace path
-sed "s|{{WORKSPACE_DIR}}|$HOME/IWE|g" setup/optional/pomodoro-alert.plist \
+sed "s|/c/Users/tocpeople/IWE|$HOME/IWE|g" setup/optional/pomodoro-alert.plist \
   > ~/Library/LaunchAgents/com.exocortex.pomodoro-alert.plist
 
 # 2. Load the agent (starts immediately, runs every 5 min)
@@ -58,7 +58,7 @@ rm ~/Library/LaunchAgents/com.exocortex.pomodoro-alert.plist
 | File | Purpose |
 |------|---------|
 | `pomodoro-alert.py` | Python script (WakaTime API + macOS notification) |
-| `pomodoro-alert.plist` | launchd agent template (replace `{{WORKSPACE_DIR}}`) |
+| `pomodoro-alert.plist` | launchd agent template (replace `/c/Users/tocpeople/IWE`) |
 
 ---
 

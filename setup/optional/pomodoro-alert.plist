@@ -8,7 +8,7 @@
     <key>ProgramArguments</key>
     <array>
         <string>/usr/bin/python3</string>
-        <string>{{WORKSPACE_DIR}}/setup/optional/pomodoro-alert.py</string>
+        <string>/c/Users/tocpeople/IWE/setup/optional/pomodoro-alert.py</string>
     </array>
 
     <key>StartInterval</key>

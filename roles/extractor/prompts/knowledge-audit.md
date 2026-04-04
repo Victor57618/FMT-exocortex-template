@@ -15,7 +15,7 @@
 ## Конфигурация
 
 > Перед обработкой прочитай:
-> 1. `{{WORKSPACE_DIR}}/FMT-exocortex-template/roles/extractor/config/routing.md` — таблицы маршрутизации
+> 1. `/c/Users/tocpeople/IWE/FMT-exocortex-template/roles/extractor/config/routing.md` — таблицы маршрутизации
 
 ## Алгоритм
 

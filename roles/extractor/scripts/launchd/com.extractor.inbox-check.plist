@@ -7,7 +7,7 @@
 
     <key>ProgramArguments</key>
     <array>
-        <string>{{WORKSPACE_DIR}}/FMT-exocortex-template/roles/extractor/scripts/extractor.sh</string>
+        <string>/c/Users/tocpeople/IWE/FMT-exocortex-template/roles/extractor/scripts/extractor.sh</string>
         <string>inbox-check</string>
     </array>
 
@@ -15,17 +15,17 @@
     <integer>10800</integer>
 
     <key>StandardOutPath</key>
-    <string>{{HOME_DIR}}/logs/extractor/launchd-inbox-check.log</string>
+    <string>/c/Users/tocpeople/logs/extractor/launchd-inbox-check.log</string>
 
     <key>StandardErrorPath</key>
-    <string>{{HOME_DIR}}/logs/extractor/launchd-inbox-check-error.log</string>
+    <string>/c/Users/tocpeople/logs/extractor/launchd-inbox-check-error.log</string>
 
     <key>EnvironmentVariables</key>
     <dict>
         <key>PATH</key>
         <string>/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin</string>
         <key>HOME</key>
-        <string>{{HOME_DIR}}</string>
+        <string>/c/Users/tocpeople</string>
     </dict>
 
     <key>RunAtLoad</key>
