@@ -13,7 +13,7 @@
 set -e
 
 VERSION="2.0.0"
-REPO="Victor57618/FMT-exocortex-template/blob"
+REPO="Victor57618/FMT-exocortex-template"
 BRANCH="main"
 RAW_BASE="https://raw.githubusercontent.com/$REPO/$BRANCH"
 

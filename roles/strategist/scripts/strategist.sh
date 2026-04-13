@@ -81,14 +81,15 @@ run_claude() {
     prompt=$(cat "$command_path")
 
     # Inject current date + day of week (prevents LLM calendar arithmetic errors)
+    # Bash-only Russian date (replaces python3 dependency — not available on all platforms)
     local ru_date_context
-    ru_date_context=$(python3 -c "
-import datetime
-days = ['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье']
-months = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря']
-d = datetime.date.today()
-print(f'{d.day} {months[d.month-1]} {d.year}, {days[d.weekday()]}')
-")
+    local _month_num=$(( 10#$(date +%m) ))
+    local _day_num=$(( 10#$(date +%d) ))
+    local _dow_num=$(( 10#$(date +%u) ))
+    local _year=$(date +%Y)
+    local _months=( '' января февраля марта апреля мая июня июля августа сентября октября ноября декабря )
+    local _days=( '' Понедельник Вторник Среда Четверг Пятница Суббота Воскресенье )
+    ru_date_context="${_day_num} ${_months[$_month_num]} ${_year}, ${_days[$_dow_num]}"
     prompt="[Системный контекст] Сегодня: ${ru_date_context}. ISO: ${DATE}. День недели №${DAY_OF_WEEK} (1=Пн..7=Вс). ЯЗЫК: отвечай ТОЛЬКО на русском. Украинский, английский и другие языки запрещены.
 
 ${prompt}"
@@ -164,7 +165,9 @@ acquire_lock() {
 }
 
 # Читаем strategy_day из конфига (L4 Personal)
-RHYTHM_CONFIG="$HOME/.claude/projects/-Users-$(whoami)-IWE/memory/day-rhythm-config.yaml"
+# Путь: сначала IWE/memory/, fallback — шаблон. Не использовать .claude/projects/ (slug нестабилен).
+RHYTHM_CONFIG="/c/Users/$(whoami)/IWE/memory/day-rhythm-config.yaml"
+[ -f "$RHYTHM_CONFIG" ] || RHYTHM_CONFIG="/c/Users/$(whoami)/IWE/FMT-exocortex-template/memory/day-rhythm-config.yaml"
 STRATEGY_DAY_NAME=$(grep 'strategy_day:' "$RHYTHM_CONFIG" 2>/dev/null | awk '{print $2}' || echo "monday")
 # Конвертируем имя дня в номер (1=Mon..7=Sun)
 case "$STRATEGY_DAY_NAME" in
