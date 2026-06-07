@@ -115,9 +115,20 @@ UPDATED_FILES=()
 UPDATED_LINES=()
 UNCHANGED=0
 
+# Count total files for progress display
+TOTAL_FILES=$(python3 -c "
+import json
+with open('$MANIFEST') as f:
+    data = json.load(f)
+print(len(data.get('files', [])))
+" 2>/dev/null || echo "?")
+DOWNLOAD_IDX=0
+
 # Parse manifest: extract path and desc for each file entry
 while IFS='|' read -r fpath fdesc; do
     [ -z "$fpath" ] && continue
+    DOWNLOAD_IDX=$((DOWNLOAD_IDX + 1))
+    printf "  (%s/%s) %s\r" "$DOWNLOAD_IDX" "$TOTAL_FILES" "$fpath"
 
     # Download remote file
     REMOTE_FILE="$TMPDIR_UPDATE/files/$fpath"
@@ -159,6 +170,7 @@ for entry in data.get('files', []):
     done
 }
 )
+printf "\n"
 
 # === Step 2b: Deprecated files (устаревшие L1-файлы к удалению) ===
 DEPRECATED_FOUND=()
@@ -347,7 +359,7 @@ for i in "${!DEPRECATED_FOUND[@]}"; do
             ;;
         esac
         # Also remove from Claude memory dir (memory/* files)
-        case "$f" in memory/*.md)
+        case "$f" in memory/*.md|memory/*.yaml|memory/*.yml)
             mem_path="$CLAUDE_MEMORY_DIR/$(basename "$f")"
             [ -f "$mem_path" ] && rm "$mem_path" && echo "    (также из memory/)"
             ;;
@@ -588,7 +600,7 @@ if [ -d "$CLAUDE_MEMORY_DIR" ]; then
     MEM_UPDATED=0
     for f in "${NEW_FILES[@]}" "${UPDATED_FILES[@]}"; do
         case "$f" in
-            memory/*.md)
+            memory/*.md|memory/*.yaml|memory/*.yml)
                 fname=$(basename "$f")
                 if [ "$fname" != "MEMORY.md" ]; then
                     cp "$SCRIPT_DIR/$f" "$CLAUDE_MEMORY_DIR/$fname"
@@ -606,7 +618,7 @@ fi
 # Propagate skills, hooks, rules, lib, config, detectors to workspace if changed.
 # lib/config/detectors — runtime dependencies капчер-шины (capture-bus.sh) и детекторов.
 for f in "${NEW_FILES[@]}" "${UPDATED_FILES[@]}"; do
-    case "$f" in .claude/skills/*|.claude/hooks/*|.claude/rules/*|.claude/lib/*|.claude/config/*|.claude/detectors/*|.claude/settings.json)
+    case "$f" in .claude/skills/*|.claude/hooks/*|.claude/rules/*|.claude/lib/*|.claude/config/*|.claude/detectors/*|.claude/scripts/*|.claude/agents/*|.claude/settings.json)
         src="$SCRIPT_DIR/$f"
         dst="$WORKSPACE_DIR/$f"
         mkdir -p "$(dirname "$dst")"
@@ -615,6 +627,62 @@ for f in "${NEW_FILES[@]}" "${UPDATED_FILES[@]}"; do
         ;;
     esac
 done
+
+# === Step 5d: Repair-pass для critical runtime files ===
+# Закрывает два gap-а:
+#   (1) «UNCHANGED ⇒ файл отсутствует» — ручное удаление / сбой предыдущего update.
+#   (2) «UNCHANGED ⇒ файл stale» — файл есть, но hash расходится с FMT source
+#       (возникает при частичном применении update, dirty workspace, или если workspace
+#       не перезаписывал существующий файл при прошлом update).
+# Выполняется ПОСЛЕ propagation чтобы repair не дублировал работу NEW_FILES/UPDATED_FILES.
+REPAIRED=0
+while IFS='|' read -r fpath _; do
+    [ -z "$fpath" ] && continue
+    [ ! -f "$SCRIPT_DIR/$fpath" ] && continue
+
+    case "$fpath" in
+        memory/*.md|memory/*.yaml|memory/*.yml)
+            fname=$(basename "$fpath")
+            [ "$fname" = "MEMORY.md" ] && continue
+            if [ -d "$CLAUDE_MEMORY_DIR" ]; then
+                mem_dst="$CLAUDE_MEMORY_DIR/$fname"
+                if [ ! -f "$mem_dst" ]; then
+                    cp "$SCRIPT_DIR/$fpath" "$mem_dst"
+                    echo "  ⟲ $fpath → memory/ (repair)"
+                    REPAIRED=$((REPAIRED + 1))
+                elif [ -r "$mem_dst" ] && [ "$(hash_file "$SCRIPT_DIR/$fpath")" != "$(hash_file "$mem_dst")" ]; then
+                    cp "$SCRIPT_DIR/$fpath" "$mem_dst"
+                    echo "  ⟲ $fpath → memory/ (stale repair)"
+                    REPAIRED=$((REPAIRED + 1))
+                fi
+            fi
+            ;;
+        .claude/skills/*|.claude/hooks/*|.claude/rules/*|.claude/lib/*|.claude/config/*|.claude/detectors/*|.claude/scripts/*|.claude/agents/*|.claude/settings.json)
+            dst="$WORKSPACE_DIR/$fpath"
+            if [ ! -f "$dst" ]; then
+                mkdir -p "$(dirname "$dst")"
+                cp "$SCRIPT_DIR/$fpath" "$dst"
+                case "$fpath" in *.sh) chmod +x "$dst" ;; esac
+                echo "  ⟲ $fpath → workspace (repair)"
+                REPAIRED=$((REPAIRED + 1))
+            elif [ -r "$dst" ] && [ "$(hash_file "$SCRIPT_DIR/$fpath")" != "$(hash_file "$dst")" ]; then
+                cp "$SCRIPT_DIR/$fpath" "$dst"
+                case "$fpath" in *.sh) chmod +x "$dst" ;; esac
+                echo "  ⟲ $fpath → workspace (stale repair)"
+                REPAIRED=$((REPAIRED + 1))
+            fi
+            ;;
+    esac
+done < <(
+    python3 -c "
+import json
+with open('$MANIFEST') as f:
+    data = json.load(f)
+for entry in data.get('files', []):
+    print(entry['path'] + '|')
+" 2>/dev/null
+)
+[ "$REPAIRED" -gt 0 ] && echo "  ✓ $REPAIRED runtime-файлов восстановлено"
 
 # (Step 6b removed — repo rename no longer supported, no link migration needed)
 
@@ -774,6 +842,14 @@ if $ROLES_CHANGED && command -v launchctl >/dev/null 2>&1; then
                 echo "  ○ $(basename "$role_dir"): переустановите вручную"
         fi
     done
+fi
+
+# === Step 6e: Replace local manifest with downloaded remote manifest ===
+# Replaces entire manifest (files + deprecated_files + version), not just version field.
+# This ensures validators (D1/D9/D10) and future updates see the correct file list.
+if [ -f "$MANIFEST" ]; then
+    cp "$MANIFEST" "$SCRIPT_DIR/update-manifest.json" \
+        && echo "  • update-manifest.json: заменён remote manifest (v$UPSTREAM_VERSION)"
 fi
 
 # === Step 7: Commit changes ===
