@@ -20,6 +20,10 @@ RAW_BASE="https://raw.githubusercontent.com/$REPO/$BRANCH"
 CHECK_ONLY=false
 AUTO_YES=false
 
+# Allow extra curl flags via env var (e.g. CURL_OPTS="--insecure" for Windows corporate firewall).
+# shellcheck disable=SC2086  # $CURL_BASE_OPTS intentionally unquoted (multi-token flag)
+CURL_BASE_OPTS="${CURL_OPTS:-}"
+
 for arg in "$@"; do
     case "$arg" in
         --check|--dry-run)  CHECK_ONLY=true ;;
@@ -51,6 +55,18 @@ hash_file() {
     sha256sum "$1" 2>/dev/null | cut -d' ' -f1
 }
 
+# Личные L4-конфиги в memory/: update.sh сеет их при ОТСУТСТВИИ (новая инсталляция),
+# но НИКОГДА не перезаписывает поверх существующего — там персональные правки
+# пользователя (напр. calendar_ids, slot-настройки в day-rhythm-config.yaml).
+# Файл сам объявляет себя «L4 Personal. Override defaults from IWE Template».
+# MEMORY.md защищён отдельной проверкой ниже. См. issue про clobber day-rhythm-config.
+is_personal_config() {
+    case "$1" in
+        day-rhythm-config.yaml) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
 # === Detect directories ===
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
@@ -75,7 +91,7 @@ echo ""
 # === Step 0: Self-update (bootstrap) ===
 echo "[0] Проверка update.sh..."
 REMOTE_UPDATE="$TMPDIR_UPDATE/update.sh.new"
-if curl -sSfL "$RAW_BASE/update.sh" -o "$REMOTE_UPDATE" 2>/dev/null; then
+if curl $CURL_BASE_OPTS -sSfL "$RAW_BASE/update.sh" -o "$REMOTE_UPDATE" 2>/dev/null; then
     LOCAL_HASH=$(hash_file "$SCRIPT_DIR/update.sh")
     REMOTE_HASH=$(hash_file "$REMOTE_UPDATE")
     if [ "$LOCAL_HASH" != "$REMOTE_HASH" ]; then
@@ -94,7 +110,7 @@ echo "[1] Загрузка манифеста..."
 MANIFEST_URL="$RAW_BASE/update-manifest.json"
 MANIFEST="$TMPDIR_UPDATE/manifest.json"
 
-if ! curl -sSfL "$MANIFEST_URL" -o "$MANIFEST" 2>/dev/null; then
+if ! curl $CURL_BASE_OPTS -sSfL "$MANIFEST_URL" -o "$MANIFEST" 2>/dev/null; then
     echo "ОШИБКА: Не удалось загрузить манифест обновлений."
     echo "  URL: $MANIFEST_URL"
     echo "  Проверьте подключение к интернету."
@@ -127,6 +143,15 @@ DOWNLOAD_IDX=0
 # Parse manifest: extract path and desc for each file entry
 while IFS='|' read -r fpath fdesc; do
     [ -z "$fpath" ] && continue
+    # Protected user files (issue #154): never overwrite if they already exist locally.
+    # The "Не затрагиваются" list below is cosmetic; this is the actual skip-if-exists guard.
+    case "$fpath" in
+        params.yaml|memory/MEMORY.md|.claude/settings.local.json)
+            if [ -f "$SCRIPT_DIR/$fpath" ]; then
+                UNCHANGED=$((UNCHANGED + 1))
+                continue
+            fi ;;
+    esac
     DOWNLOAD_IDX=$((DOWNLOAD_IDX + 1))
     printf "  (%s/%s) %s\r" "$DOWNLOAD_IDX" "$TOTAL_FILES" "$fpath"
 
@@ -134,7 +159,7 @@ while IFS='|' read -r fpath fdesc; do
     REMOTE_FILE="$TMPDIR_UPDATE/files/$fpath"
     mkdir -p "$(dirname "$REMOTE_FILE")"
 
-    if ! curl -sSfL "$RAW_BASE/$fpath" -o "$REMOTE_FILE" 2>/dev/null; then
+    if ! curl $CURL_BASE_OPTS -sSfL "$RAW_BASE/$fpath" -o "$REMOTE_FILE" 2>/dev/null; then
         continue
     fi
 
@@ -603,8 +628,12 @@ if [ -d "$CLAUDE_MEMORY_DIR" ]; then
             memory/*.md|memory/*.yaml|memory/*.yml)
                 fname=$(basename "$f")
                 if [ "$fname" != "MEMORY.md" ]; then
-                    cp "$SCRIPT_DIR/$f" "$CLAUDE_MEMORY_DIR/$fname"
-                    MEM_UPDATED=$((MEM_UPDATED + 1))
+                    if is_personal_config "$fname" && [ -f "$CLAUDE_MEMORY_DIR/$fname" ]; then
+                        echo "  ✓ $fname — личный L4-конфиг, не перезаписан"
+                    else
+                        cp "$SCRIPT_DIR/$f" "$CLAUDE_MEMORY_DIR/$fname"
+                        MEM_UPDATED=$((MEM_UPDATED + 1))
+                    fi
                 fi
                 ;;
         esac
@@ -650,6 +679,8 @@ while IFS='|' read -r fpath _; do
                     cp "$SCRIPT_DIR/$fpath" "$mem_dst"
                     echo "  ⟲ $fpath → memory/ (repair)"
                     REPAIRED=$((REPAIRED + 1))
+                elif is_personal_config "$fname"; then
+                    : # личный L4-конфиг существует — НЕ stale-repair (персонализация ≠ дефолт по хешу)
                 elif [ -r "$mem_dst" ] && [ "$(hash_file "$SCRIPT_DIR/$fpath")" != "$(hash_file "$mem_dst")" ]; then
                     cp "$SCRIPT_DIR/$fpath" "$mem_dst"
                     echo "  ⟲ $fpath → memory/ (stale repair)"
