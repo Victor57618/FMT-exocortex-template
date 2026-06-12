@@ -5,6 +5,17 @@ All notable changes to FMT-exocortex-template will be documented in this file.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versioning: [Semantic Versioning](https://semver.org/).
 
+## [0.29.25] — 2026-06-12
+
+### Fixed — WP-25 follow-up: kimi-peer-adapter.sh `--add-dir` + ASCII-инструкция (Windows)
+
+Достройка WP-25. Авто-CP1251 покрывала только stdin. Файлы из `--add-dir` Kimi читает с исходными символами и при наличии `→`/`≠` падает на собственном CP1251-stdout (`'charmap' codec can't encode '→'`); PYTHONUTF8 это НЕ переопределяет — корень внутри Kimi (проверено смоуком). Любая peer-сессия с методическим текстом со стрелками (диаграммы, цепочки «симптомы → решение») падала.
+
+- **Санитайз файлов `--add-dir`** в `scripts/kimi-peer-adapter.sh` (MINGW-блок): после `.agentigore`-фильтра символы (`→`, `≠`, `≤`, `•`, …) заменяются на ASCII в `.md/.txt/.yaml/.yml/.json` clean-dir, кодировка UTF-8 (Kimi читает файлы как UTF-8). Kimi больше не эхотит `→` в ответ.
+- **Авто-инструкция ASCII** добавляется в начало промпта на Windows: «в ОТВЕТЕ используй только ASCII-аналоги (`->`, `!=`, `<=`, `>=`)» — снижает риск, что Kimi сгенерит `→` сама.
+- Остаточный риск (Kimi спонтанно генерит юникод-символ) не устраним снаружи — баг внутри Kimi. Mitigation = инструкция.
+- Smoke (Windows): `--add-dir` с `→ ≠` внутри → exit 0, валидный UTF-8, ответ Kimi в ASCII (`->`, `!=`). Раньше — `'charmap' codec` crash.
+
 ## [0.29.24] — 2026-06-12
 
 ### Fixed — WP-25: kimi-peer-adapter.sh Windows-локаль (UTF-8↔CP1251)

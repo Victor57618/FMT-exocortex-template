@@ -234,6 +234,44 @@ fi
 KIMI_STDOUT_ENCODING="utf-8"
 case "$(uname -s 2>/dev/null)" in
   MINGW*|MSYS*|CYGWIN*)
+    # WP-25 follow-up (12 июня): Kimi на Windows пишет stdout в cp1251 (charmap) и
+    # ПАДАЕТ на не-CP1251 символах (→, ≠, …) — PYTHONUTF8 это НЕ переопределяет
+    # (проверено: 'charmap' codec can't encode '→'). Корень внутри Kimi.
+    # Поэтому достраиваем байтовый слой:
+    #   (а) заменяем символы в файлах --add-dir, которые читает Kimi (иначе она
+    #       эхотит → из текста в ответ и падает на собственном stdout);
+    #   (б) добавляем в промпт инструкцию «отвечай ASCII» (снижает риск, что Kimi
+    #       сгенерит → сама).
+
+    # (а) Sanitize --add-dir clean files (symbol-replace, keep UTF-8 — Kimi читает файлы как UTF-8)
+    for ((_i=1; _i<${#FILTERED_DIRS[@]}; _i+=2)); do
+      _CDIR="${FILTERED_DIRS[$_i]}"
+      [ -d "$_CDIR" ] || continue
+      find "$_CDIR" -type f \( -name '*.md' -o -name '*.txt' -o -name '*.yaml' -o -name '*.yml' -o -name '*.json' \) -print0 2>/dev/null |
+        while IFS= read -r -d '' _f; do
+          python3 - "$_f" <<'PYEOF'
+import sys
+repl = {'→':'->','←':'<-','↔':'<->','↤':'<--','↦':'-->','≠':'!=','≤':'<=','≥':'>=','⭐':'*','★':'*','•':'-','✓':'OK','✗':'X'}
+p = sys.argv[1]
+try:
+    t = open(p, encoding='utf-8').read()
+except Exception:
+    sys.exit(0)
+for a, b in repl.items():
+    t = t.replace(a, b)
+open(p, 'w', encoding='utf-8').write(t)
+PYEOF
+        done
+    done
+
+    # (б) Prepend ASCII-output instruction to the prompt (before cp1251 encode)
+    _ASCII_NOTE="$TMP_ROOT/peer-prompt.ascii"
+    {
+      printf '%s\n\n' 'ВАЖНО (кодировка вывода): в ОТВЕТЕ используй только ASCII-аналоги спецсимволов — пиши "->" вместо стрелки, "!=" вместо знака неравенства, "<=" ">=" вместо знаков сравнения. Тире (—) и кириллица допустимы. Юникод-стрелки и матсимволы в ответе вызовут сбой кодировки.'
+      cat "$PROMPT_FILE"
+    } > "$_ASCII_NOTE"
+    PROMPT_FILE="$_ASCII_NOTE"
+
     PROMPT_FILE_CP1251="$TMP_ROOT/peer-prompt.cp1251"
     python3 - "$PROMPT_FILE" "$PROMPT_FILE_CP1251" <<'PYEOF'
 import sys
