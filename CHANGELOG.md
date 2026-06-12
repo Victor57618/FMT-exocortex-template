@@ -5,6 +5,22 @@ All notable changes to FMT-exocortex-template will be documented in this file.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versioning: [Semantic Versioning](https://semver.org/).
 
+## [0.29.24] — 2026-06-12
+
+### Fixed — WP-25: kimi-peer-adapter.sh Windows-локаль (UTF-8↔CP1251)
+
+На Windows (MSYS/Cygwin/MINGW) Kimi CLI запускается в CP1251 charmap — UTF-8 prompt с не-CP1251 символами (`→`, `≠`, `≤`, `⭐`) ломал вызов с `'charmap' codec can't encode character`. Старый pipe `| grep -v "^To resume this session:"` дополнительно ломал CP1251 stdout: `grep` видел NUL-байты как «binary» и терял ответ. Лекарство peer-сессий на Windows было ручным Python-pipeline ~10-12 мин на сессию.
+
+- **Детектор Windows-локали** в `scripts/kimi-peer-adapter.sh` после блока «Sanitize surrogate». На `MINGW*/MSYS*/CYGWIN*` через Python заменяет не-CP1251 символы на ASCII-эквиваленты (`→` → `->`, `≠` → `!=`, `⭐` → `*`, и т.д.) + кодирует prompt в CP1251 для stdin Kimi. На macOS/Linux блок — no-op.
+- **Платформенно-зависимое декодирование stdout:** capture Kimi-output в файл байтов → Python декодирует по `KIMI_STDOUT_ENCODING` (cp1251 на Windows, utf-8 иначе) → фильтрация «To resume» на ЧИСТОМ ТЕКСТЕ (а не на байтах) → запись UTF-8 байтов через `sys.stdout.buffer.write()` в обход локального stdout-encoder Python.
+- **Контракт адаптера не изменился:** UTF-8 stdin → UTF-8 stdout, прозрачно для писателя.
+- **Smoke-тест (Windows):** `echo "Скажи что значит → и ≠" | kimi-peer-adapter.sh -p` → exit 0, ~170 байт UTF-8 русского ответа.
+- **Symbol replacements:** `→ ← ↔ ↤ ↦ ≠ ≤ ≥ ⭐ ★ • ✓ ✗`. Em-dash `—` и en-dash `–` оставлены — они в CP1251 (0x97/0x96).
+
+Источник: peer-сессия 2026-06-12-01 показала, что CP1251 mismatch съел 12 мин из 32 на сессию. Авто-конверсия снимает рекуррентный долг.
+
+Commit: TBD
+
 ## [0.29.23] — 2026-05-01
 
 ### Added — WP-245 Ф28.2: скиллы personal-guide-start и personal-guide-render

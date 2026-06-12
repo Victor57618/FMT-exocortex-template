@@ -63,7 +63,7 @@ log "[1/8] manifest_paths — пути из update-manifest.json в дереве
 if [ -f update-manifest.json ] && command -v python3 >/dev/null 2>&1; then
     MISSING=$(python3 -c "
 import json, os
-with open('update-manifest.json') as f:
+with open('update-manifest.json', encoding='utf-8') as f:
     data = json.load(f)
 for entry in data.get('files', []):
     p = entry.get('path') if isinstance(entry, dict) else entry
