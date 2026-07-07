@@ -1,0 +1,88 @@
+# Parity Contract — парные скрипты FMT-exocortex-template
+# Контракт: каждый «ключевой паттерн» присутствует в обоих парных скриптах
+# (или ни в одном — если паттерн неприменим к скрипту).
+#
+# Regex: Extended Regular Expressions (grep -E), macOS-compatible.
+# Не используйте: \d, \w, lookahead, PCRE-специфичные конструкции.
+# Для regex начинающихся с `-` используйте обёртку (grep -E -e).
+#
+# Related: WP-315 Ф4, DP.SC.125, AR.205
+
+version: "1.2"
+
+pairs:
+  - name: "setup ↔ update"
+    scripts:
+      - "setup.sh"
+      - "update.sh"
+    patterns:
+      - id: "iwe-paths"
+        description: "Упоминание .iwe-paths (source или install)"
+        regex: "\.iwe-paths"
+        required_in_both: true
+
+      - id: "memory-files"
+        description: "Работа с memory/ (copy, remove, list)"
+        regex: "memory/"
+        required_in_both: true
+
+      - id: "build-runtime-invoke"
+        description: "Вызов build-runtime.sh (сухой или реальный)"
+        regex: "build-runtime\.sh"
+        required_in_both: true
+
+      - id: "placeholder-check"
+        description: "Проверка или подстановка {{PLACEHOLDER}}"
+        regex: "\{\{"
+        required_in_both: false
+
+      - id: "cross-platform-sed"
+        description: "Определение sed_inplace для macOS/Linux"
+        regex: "sed_inplace"
+        required_in_both: true
+
+      - id: "workspace-dir"
+        description: "Определение WORKSPACE_DIR"
+        regex: "WORKSPACE_DIR="
+        required_in_both: true
+
+      - id: "script-dir"
+        description: "Определение SCRIPT_DIR"
+        regex: "SCRIPT_DIR="
+        required_in_both: true
+
+      - id: "help-flag"
+        description: "Поддержка --help / -h"
+        regex: "help"
+        required_in_both: true
+
+      - id: "version-flag"
+        description: "Поддержка --version"
+        regex: "version"
+        required_in_both: true
+
+      - id: "dry-run-flag"
+        description: "Поддержка --dry-run или --check (preview без изменений)"
+        regex: "(--dry-run|--check)"
+        required_in_both: false
+
+  - name: "migrate scripts"
+    scripts:
+      - "scripts/migrate-initial-marker.sh"
+      - "scripts/migrate-to-runtime-target.sh"
+    patterns:
+      - id: "set-e"
+        description: "set -e в начале"
+        regex: "^set -e"
+        required_in_both: true
+
+      - id: "script-dir"
+        description: "Определение SCRIPT_DIR"
+        regex: "SCRIPT_DIR="
+        required_in_both: true
+
+# Правила парсинга:
+# - regex ищется в каждом скрипте пары
+# - required_in_both: true → должен матчаться в обоих
+# - required_in_both: false → достаточно хотя бы в одном (или ни в одном)
+# - Скрипты ищутся относительно корня репо (FMT-exocortex-template/)

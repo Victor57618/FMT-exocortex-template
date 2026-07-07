@@ -3,9 +3,9 @@
 > **IWE (Intellectual Work Environment)** — интеллектуальная рабочая среда, аналог IDE для развития мышления. Как IDE даёт программисту редактор, компилятор, линтер и дебаггер — так IWE даёт человеку формализованные знания (Pack), автоматическое извлечение (Экстрактор), проверку корректности (FPF/SPF) и диагностику пробелов (Digital Twin). Человек работает вместе с ИИ-агентами, каждый из которых играет свою роль.
 >
 > Каждый раздел: **зачем** → **что изучить** → **где найти**.
+> Не на macOS или не Claude Code? → **[PORTABILITY.md](PORTABILITY.md)**
 
-<details>
-<summary><b>Как пользоваться этим файлом</b></summary>
+## Как пользоваться этим файлом
 
 1. **Новичок:** Разделы 1-2 (что такое IWE, архитектура). Это ~1 час. Поймёшь, как всё устроено.
 2. **Первая неделя:** Разделы 3-5 (фундамент, репозитории, повседневная работа). По мере необходимости.
@@ -19,9 +19,7 @@
 >
 > Ссылки `./` — файлы в этом репо. Ссылки `github.com/...` — другие репозитории.
 
-</details>
-<details open>
-<summary><b>1. Что такое IWE</b></summary>
+## 1. Что такое IWE
 
 ### 1.1. Определение
 
@@ -171,9 +169,7 @@ TM1-TM3: Наставник    TA1-TA4: Администратор    TD1: Ра�
 
 **Центральный инвариант IWE:** Обновления платформы (Standard) **никогда** не затрагивают данные пользователя (Personal). Твои планы, знания и стратегия принадлежат тебе.
 
-</details>
-<details>
-<summary><b>2. Архитектура: контуры и пространства</b></summary>
+## 2. Архитектура: контуры и пространства
 
 ### 2.1. Четыре контура системы
 
@@ -375,9 +371,7 @@ PACK-{область}/             ← Твои доменные знания
 
 **Правило IntegrationGate:** Перед добавлением нового инструмента в свой IWE: (1) тип, (2) контур (L2/L3/L4), (3) роли, (4) продукты, (5) процессы.
 
-</details>
-<details>
-<summary><b>3. Фундамент мышления</b></summary>
+## 3. Фундамент мышления
 
 ### 3.1. Иерархия принципов
 
@@ -456,9 +450,7 @@ FPF (First Principles Framework) — «операционная система �
 - [FPF/README.md](https://github.com/ailev/FPF) — обзор
 - [memory/fpf-reference.md](../memory/fpf-reference.md) — навигация по ключевым секциям
 
-</details>
-<details>
-<summary><b>4. Репозитории и проекты</b></summary>
+## 4. Репозитории и проекты
 
 ### 4.1. Три типа репозиториев
 
@@ -509,14 +501,14 @@ DS — самый частый тип репозитория, который т�
 
 | Ситуация | Что создать | Как |
 |----------|------------|-----|
-| Определил область знаний | `PACK-{область}` | Из шаблона [SPF/pack-template](https://github.com/TserenTserenov/SPF) |
+| Определил область знаний | `PACK-{область}` | `/pack-new` — guided flow по SPF (проверяет/клонирует SPF+FPF, задаёт домен, создаёт scaffold) |
 | Строишь систему (бот, инструмент) | `DS-{проект}` (instrument) | `gh repo create DS-my-tool --private` |
 | Создаёшь курс или контент | `DS-{проект}` (surface) | `gh repo create DS-my-course --private` |
 | Координируешь несколько систем | `DS-{хаб}` (governance) | `gh repo create DS-my-hub --private` |
 
 **Что должно быть внутри каждого DS-*:**
 - `CLAUDE.md` — правила для Claude Code (специфичные для этого репо)
-- `WORKPLAN.md` — текущие задачи
+- `inbox/WP-*.md` — контексты активных РП (single source — агрегируется `scripts/active-wp-sweep.sh`)
 - `MAPSTRATEGIC.md` — куда двигается ЭТА система
 
 **MAPSTRATEGIC.md vs Strategy.md:**
@@ -553,9 +545,7 @@ DS — самый частый тип репозитория, который т�
 **Где изучить:**
 - [SPF/spec/SPF.SPEC.001-entity-coding.md](https://github.com/TserenTserenov/SPF/blob/main/spec/SPF.SPEC.001-entity-coding.md) — полная спецификация
 
-</details>
-<details>
-<summary><b>5. Повседневная работа</b></summary>
+## 5. Повседневная работа
 
 ### 5.1. ОРЗ-фрактал: День и Сессия
 
@@ -796,16 +786,16 @@ DS — самый частый тип репозитория, который т�
 | `archive/` | Завершённые планы |
 | `exocortex/` | Backup memory/ + CLAUDE.md |
 
-**Паттерн Hub-and-Spoke:** DS-strategy (хаб) координирует, WORKPLAN.md в каждом репо (споки).
+**Паттерн single-source:** DS-strategy (хаб) — единственный реестр (`WP-REGISTRY.md` + `inbox/WP-*.md`), агрегация через `scripts/active-wp-sweep.sh`. Hub-and-spoke с WORKPLAN.md отменён WP-283 Ф-H (май 2026).
 
 #### Настройка дня стратегирования
 
-По умолчанию сессия стратегирования запускается в **понедельник** (`strategy_day: monday` в `memory/day-rhythm-config.yaml`). Ты можешь выбрать любой день недели:
+По умолчанию сессия стратегирования запускается в **воскресенье** (`strategy_day: sunday` в `memory/day-rhythm-config.yaml`). Ты можешь выбрать любой день недели:
 
 ```yaml
 # memory/day-rhythm-config.yaml
 day_open:
-  strategy_day: saturday   # monday..sunday — твой день стратегирования
+  strategy_day: saturday   # sunday..sunday — твой день стратегирования
 ```
 
 В этот день:
@@ -909,9 +899,7 @@ Guards проверяются при каждом Note-Review и при созд
 | Протокол сортировки | `roles/strategist/prompts/note-review.md` (категория #4) |
 | Протокол Close | `memory/protocol-close.md` (шаг 9: draft-list) |
 
-</details>
-<details>
-<summary><b>6. Знания: Pack и экстракция</b></summary>
+## 6. Знания: Pack и экстракция
 
 ### 6.1. Что такое Pack
 
@@ -947,9 +935,12 @@ SPF определяет процесс создания Pack:
 | 10 | Обслуживание карты | Граф связей между сущностями |
 | 11 | Цикл ревью и эволюции | Протокол непрерывного обновления |
 
+**Быстрый старт:** `/pack-new` — скилл проведёт через выбор домена, имя Pack, создаст scaffold и покажет дорожную карту Ф1-Ф6.
+
 **Где изучить:**
 - [SPF/process/](https://github.com/TserenTserenov/SPF/tree/main/process) — все 11 стадий
 - [SPF/pack-template/](https://github.com/TserenTserenov/SPF/tree/main/pack-template) — шаблон структуры
+- [docs/PACK-CREATION.md](PACK-CREATION.md) — практический гайд для новичков
 
 ### 6.3. Структура Pack
 
@@ -1053,9 +1044,7 @@ Hybrid search (vector + keyword) по всем Pack-репозиториям и 
 - [SPF/ontology.md](https://github.com/TserenTserenov/SPF/blob/main/ontology.md) — SPF-level
 - [SPF/docs/conceptual-model.md](https://github.com/TserenTserenov/SPF/blob/main/docs/conceptual-model.md) — концептуальная карта
 
-</details>
-<details>
-<summary><b>7. Роли и ИИ-агенты</b></summary>
+## 7. Роли и ИИ-агенты
 
 ### 7.1. Ролецентричный подход (DP.D.033)
 
@@ -1133,9 +1122,7 @@ R8 Синхронизатор (диспетчер)
 
 **Подробности и схема role.yaml:** [roles/ROLE-CONTRACT.md](../roles/ROLE-CONTRACT.md)
 
-</details>
-<details>
-<summary><b>8. Качество и архитектура решений</b></summary>
+## 8. Качество и архитектура решений
 
 ### 8.1. ArchGate (ЭМОГССБ)
 
@@ -1264,9 +1251,7 @@ IWE использует LLM (Claude) — это создаёт специфич
 - [CLAUDE.md](../CLAUDE.md) § 5 — ЭМОГССБ (включая характеристику Безопасность)
 - [DP.ARCH.001 § 4.7](https://github.com/TserenTserenov/PACK-digital-platform/blob/main/pack/digital-platform/02-domain-entities/DP.ARCH.001-platform-architecture.md) — архитектурная характеристика Безопасность
 
-</details>
-<details>
-<summary><b>9. Платформа: бот и тиры</b></summary>
+## 9. Платформа: бот и тиры
 
 ### 9.1. 4-осевая модель тиров
 
@@ -1349,9 +1334,7 @@ Telegram-бот — основная точка входа для T1-T3. Для 
 - [CLAUDE.md](../CLAUDE.md) § 3 — различение и размещение
 - `DS-ecosystem-development/PROCESSES.md` — все сценарии (governance-репозиторий экосистемы, создаётся локально при развёртывании, не публикуется на GitHub)
 
-</details>
-<details>
-<summary><b>10. Рост и развитие</b></summary>
+## 10. Рост и развитие
 
 ### 10.1. Создание своего Pack
 
@@ -1360,18 +1343,27 @@ Telegram-бот — основная точка входа для T1-T3. Для 
 - Важно не терять знания между сессиями
 - Хочешь, чтобы Claude знал термины и паттерны твоей области
 
-```bash
-# 1. Клонируй SPF (read-only reference)
-gh repo clone TserenTserenov/SPF ~/IWE/SPF
+**Как создать:** написать в Claude Code `/pack-new` (или «хочу создать пак», «новый пак»).
 
-# 2. Создай Pack из шаблона
-cp -r ~/IWE/SPF/pack-template ~/IWE/PACK-my-domain
-cd ~/IWE/PACK-my-domain
-git init && git add -A && git commit -m "Initial Pack: my-domain"
-gh repo create PACK-my-domain --private --source=. --push
-```
+Скилл проведёт через 5 шагов:
+1. Проверит/клонирует FPF и SPF (если нет)
+2. Определит домен через 3 вопроса (SPF §01)
+3. Предложит 2-3 варианта имени → выбор
+4. Создаст scaffold структуры `PACK-{slug}/` + стартовые файлы
+5. Покажет дорожную карту наполнения Ф1-Ф6
 
-Затем откройте Claude Code — он проведёт через 11 стадий SPF.
+**Дорожная карта после создания:**
+
+| Фаза | Что делать | Время |
+|------|-----------|-------|
+| Ф1. Различения | 7-10 различений домена (SPF §03) | 1-2ч |
+| Ф2. Сущности | Роли, WP, методы — перечень (SPF §04) | 1-2ч |
+| Ф3. Методы | Описать ключевые методы (SPF §07) | 2-4ч |
+| Ф4. Рабочие продукты | Артефакты + Definition of Done (SPF §07) | 1-2ч |
+| Ф5. Failure modes | 5-10 типичных ошибок (SPF §08) | 1ч |
+| Ф6. SoTA | Источники, версия знания (SPF §09) | 1-2ч |
+
+Инструмент для наполнения: `/ke` — фиксирует знания в Pack по ходу работы.
 
 ### 10.2. Новые агенты и инструменты
 
@@ -1421,9 +1413,7 @@ gh repo create PACK-my-domain --private --source=. --push
 - **Не добавляй агентов** пока не справляешься без них (IntegrationGate, § 8.4)
 - **Клонируй SPF** только когда готов создать Pack (read-only reference)
 
-</details>
-<details open>
-<summary><b>11. Быстрый справочник</b></summary>
+## 11. Быстрый справочник
 
 > **Архитектура FAQ:** Практические вопросы («как сделать») — здесь. Доменные вопросы («что такое», «зачем») — [DP.IWE.002 §11](../../PACK-digital-platform/pack/digital-platform/02-domain-entities/DP.IWE.002-iwe-template-and-setup.md#11-частые-вопросы-faq) (source-of-truth для бота).
 
@@ -1711,7 +1701,5 @@ cd ~/IWE && ./setup.sh   # создаёт symlinks, ставит пакеты, �
 - Онтология → § 6.6
 - Платформа и бот → § 9
 - Рост → § 10
-
-</details>
 
 *Последнее обновление: 2026-03-15 (v2: ОРЗ-фрактал, классы верификации, обновлены все секции)*

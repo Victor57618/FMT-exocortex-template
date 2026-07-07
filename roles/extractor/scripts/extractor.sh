@@ -15,6 +15,19 @@ set -e
 # но prompts/ — read-only, должны браться из FMT через $IWE_TEMPLATE.
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_DIR="$(dirname "$SCRIPT_DIR")"
+
+# Guard: сырой файл в FMT-exocortex-template никогда не подставляет плейсхолдеры
+# (build-runtime.sh подставляет их только в собранную копию под .iwe-runtime/).
+# Запуск отсюда напрямую тихо создаёт директории с буквальным именем "{{HOME_DIR}}"
+# (bug-2026-07-02-home-dir-placeholder-literal-directory.md).
+case "$SCRIPT_DIR" in
+    */FMT-exocortex-template/roles/extractor/scripts)
+        echo "FATAL: extractor.sh запущен из сырого шаблона FMT-exocortex-template — плейсхолдеры не подставлены." >&2
+        echo "  Используй собранную копию: \$IWE_RUNTIME/roles/extractor/scripts/extractor.sh" >&2
+        exit 1
+        ;;
+esac
+
 WORKSPACE="{{WORKSPACE_DIR}}"
 
 # PROMPTS_DIR резолв: $IWE_TEMPLATE → standard FMT → relative (legacy)
@@ -37,6 +50,15 @@ AI_CLI="${AI_CLI:-$CLAUDE_PATH}"
 AI_CLI_PROMPT_FLAG="${AI_CLI_PROMPT_FLAG:--p}"
 AI_CLI_EXTRA_FLAGS="${AI_CLI_EXTRA_FLAGS:---dangerously-skip-permissions --allowedTools Read,Write,Edit,Glob,Grep,Bash}"
 
+# issue #17: load NOTIFY_SH_PATH from params.yaml if not already set in environment
+if [ -z "${NOTIFY_SH_PATH:-}" ]; then
+    _params="${IWE_WORKSPACE:-$HOME/IWE}/params.yaml"
+    if [ -f "$_params" ]; then
+        _notify_val=$(grep -E '^notify_sh_path:' "$_params" | sed 's/^notify_sh_path:[[:space:]]*//;s/^"//;s/"$//;s/^'"'"'//;s/'"'"'$//' | tr -d '[:space:]')
+        [ -n "$_notify_val" ] && export NOTIFY_SH_PATH="$_notify_val"
+    fi
+fi
+
 # Создаём папку для логов
 mkdir -p "$LOG_DIR"
 
@@ -52,10 +74,15 @@ log() {
 notify() {
     local title="$1"
     local message="$2"
-    # macOS: osascript, Linux: notify-send, fallback: silent
-    printf 'display notification "%s" with title "%s"' "$message" "$title" | osascript 2>/dev/null \
-        || notify-send "$title" "$message" 2>/dev/null \
-        || true
+    # issue #17: NOTIFY_SH_PATH override for Linux/Docker (set in params.yaml or .exocortex.env)
+    if [ -n "${NOTIFY_SH_PATH:-}" ] && [ -x "$NOTIFY_SH_PATH" ]; then
+        "$NOTIFY_SH_PATH" "$title" "$message" 2>/dev/null || true
+    else
+        # macOS: osascript, Linux: notify-send, fallback: silent
+        printf 'display notification "%s" with title "%s"' "$message" "$title" | osascript 2>/dev/null \
+            || notify-send "$title" "$message" 2>/dev/null \
+            || true
+    fi
 }
 
 notify_telegram() {
@@ -178,11 +205,27 @@ case "$1" in
         # Быстрая проверка: есть ли captures в inbox
         CAPTURES_FILE="$WORKSPACE/{{GOVERNANCE_REPO}}/inbox/captures.md"
         if [ -f "$CAPTURES_FILE" ]; then
-            # Маркеры имеют вид `[analyzed 2026-MM-DD]`, `[processed 2026-MM-DD]`, `[duplicate]`, `[defer]` —
-            # используем `\b` (word boundary), а не `\]`, чтобы ловить датированные маркеры.
-            # Старый подход (PENDING - PROCESSED - ANALYZED с `grep -c '\[analyzed'`) ловил подстроки
-            # в описаниях/цитатах → получался мультисчёт и ложные «N pending» срабатывания.
-            ACTUAL_PENDING=$(grep -E '^### ' "$CAPTURES_FILE" 2>/dev/null | grep -vE '\[(analyzed|processed|duplicate|defer)\b' | wc -l | tr -d ' ')
+            # WP-7 Ф-EXTRACTOR-FP fix (2026-05-08): grep '^### ' ловил все subheading'и,
+            # включая subsections (### Суть / ### Релевантность) внутри analyzed-capture'ов.
+            # На captures.md = 60 false-positive → R2 запускался впустую, отчёт не создавался.
+            # Корень: regex не учитывал что parent-capture имеет meta-секцию (**Источник/**Тип),
+            # а subsections — нет. Также \b не поддерживается в awk (grep-only feature).
+            #
+            # Fix: parent-capture определяется по наличию **Источник/**Тип в первых 8 строках.
+            # Smoke-test 8 мая: 60 false-positive → 1 true-positive.
+            ACTUAL_PENDING=$(awk '
+              /^### / && !/\[(analyzed|processed|duplicate|defer)/ {
+                found = 0
+                for (i = 1; i <= 8; i++) {
+                  if ((getline line) > 0) {
+                    if (line ~ /^\*\*(Источник|Type|Тип|Source|Маркер|Trigger)/) { found = 1; break }
+                    if (line ~ /^### |^## /) break
+                  }
+                }
+                if (found) pending++
+              }
+              END { print pending+0 }
+            ' "$CAPTURES_FILE" 2>/dev/null)
             ACTUAL_PENDING=${ACTUAL_PENDING:-0}
 
             if [ "$ACTUAL_PENDING" -le 0 ]; then
@@ -209,6 +252,26 @@ case "$1" in
     "session-close")
         log "Running session-close extraction"
         run_claude "session-close"
+        ;;
+
+    "session-close-feed")
+        # WP-247 Ф-MULTI-SOURCE.1: feeder-режим (non-interactive).
+        # Извлекает кандидатов из транскрипта + git diff,
+        # пишет ###-блоки в captures.md с маркером [feed:session-close YYYY-MM-DD].
+        # Не создаёт extraction-report — это работа inbox-check потом.
+        log "Running session-close FEED (non-interactive, writes to captures.md)"
+        run_claude "session-close-feed" "$2"
+        notify_telegram "session-close-feed"
+        ;;
+
+    "git-diff-feed")
+        # WP-247 Ф-MULTI-SOURCE.2: git-diff feeder (cron 06:00/21:00).
+        # Извлекает кандидатов из git log за окно и пишет ###-блоки в captures.md.
+        # Окно: $2 (по умолчанию "12 hours ago").
+        SINCE="${2:-12 hours ago}"
+        log "Running git-diff FEED (since: $SINCE)"
+        run_claude "git-diff-feed" "$SINCE"
+        notify_telegram "git-diff-feed"
         ;;
 
     "on-demand")

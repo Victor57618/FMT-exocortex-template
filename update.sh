@@ -12,7 +12,16 @@
 #
 set -e
 
-VERSION="2.1.0"  # WP-273 Этап 2: Generated runtime architecture (F)
+# Named exit codes (issue #31): improve diagnostics for non-obvious failures.
+EXIT_OK=0
+EXIT_USAGE=1
+EXIT_NETWORK=2
+EXIT_CONFLICT=49
+EXIT_GENERAL=1
+
+trap 'echo "ОШИБКА: update.sh прервался на строке ${LINENO}: ${BASH_COMMAND}" >&2' ERR
+
+VERSION="2.3.0"  # fix #226: CLAUDE.md conflict no longer aborts delivery/commit; repair-pass reachable on "up to date"; branch guard before commit
 REPO="TserenTserenov/FMT-exocortex-template" # UPSTREAM-CONST: do not substitute
 BRANCH="main"
 RAW_BASE="https://raw.githubusercontent.com/$REPO/$BRANCH"
@@ -23,6 +32,19 @@ AUTO_YES=false
 # Allow extra curl flags via env var (e.g. CURL_OPTS="--insecure" for Windows corporate firewall).
 # shellcheck disable=SC2086  # $CURL_BASE_OPTS intentionally unquoted (multi-token flag)
 CURL_BASE_OPTS="${CURL_OPTS:-}"
+
+# Windows (msys/cygwin) schannel backend may fail with CRYPT_E_NO_REVOCATION_CHECK.
+# Detect the best available SSL revocation flag without making a network call.
+_CURL_SSL_OPT=""
+case "${OSTYPE:-}" in
+  msys*|cygwin*)
+    if curl --help 2>&1 | grep -q "ssl-revoke-best-effort"; then
+      _CURL_SSL_OPT="--ssl-revoke-best-effort"
+    elif curl --help 2>&1 | grep -q "ssl-no-revoke"; then
+      _CURL_SSL_OPT="--ssl-no-revoke"
+    fi
+    ;;
+esac
 
 for arg in "$@"; do
     case "$arg" in
@@ -78,6 +100,11 @@ fi
 
 WORKSPACE_DIR="$(dirname "$SCRIPT_DIR")"
 
+# Claude memory dir — computed once here so both the normal propagation pass
+# (Step 6) and the early repair-pass (see repair_pass() below, issue #226) can use it.
+CLAUDE_PROJECT_SLUG="$(echo "$WORKSPACE_DIR" | tr '/' '-')"
+CLAUDE_MEMORY_DIR="$HOME/.claude/projects/$CLAUDE_PROJECT_SLUG/memory"
+
 # === Temp directory ===
 TMPDIR_UPDATE=$(mktemp -d 2>/dev/null || { mkdir -p "/tmp/exocortex-update-$$"; echo "/tmp/exocortex-update-$$"; })
 trap "rm -rf '$TMPDIR_UPDATE'" EXIT
@@ -90,16 +117,23 @@ echo ""
 
 # === Step 0: Self-update (bootstrap) ===
 echo "[0] Проверка update.sh..."
+# Capture hash before any network activity — used for --check integrity guard below (fix #205)
+SELF_HASH_BEFORE=$(hash_file "$SCRIPT_DIR/update.sh")
 REMOTE_UPDATE="$TMPDIR_UPDATE/update.sh.new"
-if curl $CURL_BASE_OPTS -sSfL "$RAW_BASE/update.sh" -o "$REMOTE_UPDATE" 2>/dev/null; then
+if curl $CURL_BASE_OPTS $_CURL_SSL_OPT -sSfL "$RAW_BASE/update.sh" -o "$REMOTE_UPDATE" 2>/dev/null; then
     LOCAL_HASH=$(hash_file "$SCRIPT_DIR/update.sh")
     REMOTE_HASH=$(hash_file "$REMOTE_UPDATE")
     if [ "$LOCAL_HASH" != "$REMOTE_HASH" ]; then
-        echo "  Найдена новая версия update.sh — обновляю..."
-        cp "$REMOTE_UPDATE" "$SCRIPT_DIR/update.sh"
-        chmod +x "$SCRIPT_DIR/update.sh"
-        echo "  Перезапуск..."
-        exec bash "$SCRIPT_DIR/update.sh" "$@"
+        if $CHECK_ONLY; then
+            # In --check mode: report available update without touching the file
+            echo "  ⚠ Новая версия update.sh доступна. Запустите без --check для обновления."
+        else
+            echo "  Найдена новая версия update.sh — обновляю..."
+            cp "$REMOTE_UPDATE" "$SCRIPT_DIR/update.sh"
+            chmod +x "$SCRIPT_DIR/update.sh"
+            echo "  Перезапуск..."
+            exec bash "$SCRIPT_DIR/update.sh" "$@"
+        fi
     fi
 fi
 echo "  update.sh актуален."
@@ -110,7 +144,7 @@ echo "[1] Загрузка манифеста..."
 MANIFEST_URL="$RAW_BASE/update-manifest.json"
 MANIFEST="$TMPDIR_UPDATE/manifest.json"
 
-if ! curl $CURL_BASE_OPTS -sSfL "$MANIFEST_URL" -o "$MANIFEST" 2>/dev/null; then
+if ! curl $CURL_BASE_OPTS $_CURL_SSL_OPT -sSfL "$MANIFEST_URL" -o "$MANIFEST" 2>/dev/null; then
     echo "ОШИБКА: Не удалось загрузить манифест обновлений."
     echo "  URL: $MANIFEST_URL"
     echo "  Проверьте подключение к интернету."
@@ -122,6 +156,77 @@ UPSTREAM_VERSION=$(grep '"version"' "$MANIFEST" | head -1 | sed 's/.*"version"[[
 echo "  Версия upstream: $UPSTREAM_VERSION"
 echo ""
 
+# === Repair-pass для critical runtime files (issue #226) ===
+# Закрывает два gap-а:
+#   (1) «UNCHANGED ⇒ файл отсутствует» — ручное удаление / сбой предыдущего update.
+#   (2) «UNCHANGED ⇒ файл stale» — файл есть, но hash расходится с FMT source
+#       (возникает при частичном применении update, dirty workspace, или если workspace
+#       не перезаписывал существующий файл при прошлом update).
+# Функция (не инлайн), потому что нужна ДО раннего "TOTAL_CHANGES=0 ⇒ exit 0"
+# (иначе repair недостижим ровно тогда, когда он нужнее всего — SCRIPT_DIR уже
+# на актуальной версии от предыдущего запуска, а workspace остался stale) И
+# после обычной propagation (Step 6) — чтобы не дублировать работу NEW/UPDATED_FILES.
+# REPAIRED — глобальный счётчик, читается вызывающим кодом после возврата.
+repair_pass() {
+    REPAIRED=0
+    while IFS='|' read -r fpath _; do
+        [ -z "$fpath" ] && continue
+        [ ! -f "$SCRIPT_DIR/$fpath" ] && continue
+
+        case "$fpath" in
+            memory/*.md|memory/*.yaml|memory/*.yml)
+                fname=$(basename "$fpath")
+                [ "$fname" = "MEMORY.md" ] && continue
+                if [ -d "$CLAUDE_MEMORY_DIR" ]; then
+                    mem_dst="$CLAUDE_MEMORY_DIR/$fname"
+                    if [ ! -f "$mem_dst" ]; then
+                        cp "$SCRIPT_DIR/$fpath" "$mem_dst"
+                        echo "  ⟲ $fpath → memory/ (repair)"
+                        REPAIRED=$((REPAIRED + 1))
+                    elif is_personal_config "$fname"; then
+                        : # личный L4-конфиг существует — НЕ stale-repair (персонализация ≠ дефолт по хешу)
+                    elif [ -r "$mem_dst" ] && [ "$(hash_file "$SCRIPT_DIR/$fpath")" != "$(hash_file "$mem_dst")" ]; then
+                        cp "$SCRIPT_DIR/$fpath" "$mem_dst"
+                        echo "  ⟲ $fpath → memory/ (stale repair)"
+                        REPAIRED=$((REPAIRED + 1))
+                    fi
+                fi
+                ;;
+            .claude/skills/*|.claude/hooks/*|.claude/rules/*|.claude/rules-lazy/*|.claude/lib/*|.claude/config/*|.claude/detectors/*|.claude/scripts/*|.claude/agents/*|.claude/styles/*|.claude/templates/*|.claude/settings.json)
+                dst="$WORKSPACE_DIR/$fpath"
+                if [ ! -f "$dst" ]; then
+                    mkdir -p "$(dirname "$dst")"
+                    cp "$SCRIPT_DIR/$fpath" "$dst"
+                    case "$fpath" in *.sh) chmod +x "$dst" ;; esac
+                    echo "  ⟲ $fpath → workspace (repair)"
+                    REPAIRED=$((REPAIRED + 1))
+                elif [ -r "$dst" ] && [ "$(hash_file "$SCRIPT_DIR/$fpath")" != "$(hash_file "$dst")" ]; then
+                    cp "$SCRIPT_DIR/$fpath" "$dst"
+                    case "$fpath" in *.sh) chmod +x "$dst" ;; esac
+                    echo "  ⟲ $fpath → workspace (stale repair)"
+                    REPAIRED=$((REPAIRED + 1))
+                fi
+                ;;
+        esac
+    done < <(
+        python3 -c "
+import json
+with open('$MANIFEST') as f:
+    data = json.load(f)
+for entry in data.get('files', []):
+    print(entry['path'] + '|')
+" 2>/dev/null
+    )
+    if [ "$REPAIRED" -gt 0 ]; then
+        echo "  ✓ $REPAIRED runtime-файлов восстановлено"
+    fi
+    # An explicit success: as a function (unlike the old inline block), this is
+    # a plain top-level command at the call site, and its own exit status
+    # (not exempted by the && short-circuit rule that saved the old inline code)
+    # is what set -e sees.
+    return 0
+}
+
 # === Step 2: Download and compare files ===
 echo "[2] Сравнение файлов..."
 
@@ -130,6 +235,12 @@ NEW_DESCS=()
 UPDATED_FILES=()
 UPDATED_LINES=()
 UNCHANGED=0
+CLAUDE_CONFLICTS=0  # unresolved CLAUDE.md merge conflict counter (WP-7)
+# issue #226: a CLAUDE.md conflict must not abort delivery of the rest of the
+# update (memory/hooks/skills, repair-pass, commit) — it's an isolated artifact.
+# Collect it here and fail at the very end instead of exiting mid-script.
+CLAUDE_CONFLICT_DETECTED=false
+CLAUDE_CONFLICT_FILES=()
 
 # Count total files for progress display
 TOTAL_FILES=$(python3 -c "
@@ -146,7 +257,7 @@ while IFS='|' read -r fpath fdesc; do
     # Protected user files (issue #154): never overwrite if they already exist locally.
     # The "Не затрагиваются" list below is cosmetic; this is the actual skip-if-exists guard.
     case "$fpath" in
-        params.yaml|memory/MEMORY.md|.claude/settings.local.json)
+        params.yaml|memory/MEMORY.md|.claude/settings.local.json|sessions/00-index.md)
             if [ -f "$SCRIPT_DIR/$fpath" ]; then
                 UNCHANGED=$((UNCHANGED + 1))
                 continue
@@ -159,7 +270,7 @@ while IFS='|' read -r fpath fdesc; do
     REMOTE_FILE="$TMPDIR_UPDATE/files/$fpath"
     mkdir -p "$(dirname "$REMOTE_FILE")"
 
-    if ! curl $CURL_BASE_OPTS -sSfL "$RAW_BASE/$fpath" -o "$REMOTE_FILE" 2>/dev/null; then
+    if ! curl $CURL_BASE_OPTS $_CURL_SSL_OPT -sSfL "$RAW_BASE/$fpath" -o "$REMOTE_FILE" 2>/dev/null; then
         continue
     fi
 
@@ -226,6 +337,10 @@ echo "=========================================="
 echo ""
 
 if [ "$TOTAL_CHANGES" -eq 0 ]; then
+    # issue #226: TOTAL_CHANGES=0 значит SCRIPT_DIR уже совпадает с upstream — но
+    # workspace мог остаться stale (прерванный предыдущий запуск). Чиним прямо тут,
+    # иначе repair-pass ниже никогда не выполнится (недостижим после этого exit).
+    repair_pass
     echo "✓ Всё актуально. Обновлений нет. ($UNCHANGED файлов проверено)"
     exit 0
 fi
@@ -271,8 +386,9 @@ echo "  ✓ extensions/ (ваши расширения протоколов)"
 echo "  ✓ params.yaml (ваши параметры)"
 echo "  ✓ .secrets/ (ключи)"
 echo "  ✓ .claude/settings.local.json (permissions)"
+echo "  ✓ sessions/00-index.md (журнал peer-сессий)"
 echo "  ✓ personal/ (ваши файлы)"
-echo "  ✓ DS-strategy/ (ваше планирование)"
+echo "  ✓ ${IWE_GOVERNANCE_REPO:-DS-strategy}/ (ваше планирование)"
 echo ""
 
 if [ "$UNCHANGED" -gt 0 ]; then
@@ -284,6 +400,12 @@ fi
 if $CHECK_ONLY; then
     echo "Режим --check: изменения не применяются."
     echo "Для применения: bash update.sh"
+    # Self-integrity guard: verify update.sh was not mutated during the check pass (fix #205)
+    SELF_HASH_AFTER=$(hash_file "$SCRIPT_DIR/update.sh")
+    if [ "$SELF_HASH_BEFORE" != "$SELF_HASH_AFTER" ]; then
+        echo "ОШИБКА: update.sh мутировал в режиме --check — это баг!" >&2
+        exit 1
+    fi
     exit 0
 fi
 
@@ -337,6 +459,7 @@ for f in "${UPDATED_FILES[@]}"; do
                     # Conflicts detected — save merged file with markers
                     cp "$TMPDIR_UPDATE/claude-merged.md" "$CURRENT_FILE"
                     cp "$NEW_FILE" "$BASE_FILE"
+                    CLAUDE_CONFLICTS=$((CLAUDE_CONFLICTS + CONFLICT_COUNT))
                     echo "  ~ $f (3-way merge, $CONFLICT_COUNT конфликтов — разрешите вручную)"
                     echo "    Конфликты обозначены <<<<<<< / ======= / >>>>>>>"
                 else
@@ -361,6 +484,23 @@ for f in "${UPDATED_FILES[@]}"; do
             # Save base for next update
             cp "$NEW_FILE" "$SCRIPT_DIR/.claude.md.base"
         fi
+    elif [[ "$f" == .claude/skills/*/SKILL.md ]]; then
+        # USER-SPACE preserve for L1 skill spec files (no install_constants in SCRIPT_DIR — already {{KEY}})
+        CURR_SKILL_FILE="$SCRIPT_DIR/$f"
+        if [ -f "$CURR_SKILL_FILE" ]; then
+            USER_SECTION=$(sed -n '/^<!-- USER-SPACE -->/,/^<!-- \/USER-SPACE -->/p' "$CURR_SKILL_FILE")
+        else
+            USER_SECTION=""
+        fi
+        cp "$TMPDIR_UPDATE/files/$f" "$SCRIPT_DIR/$f"
+        if [ -n "$USER_SECTION" ]; then
+            perl -i -0pe 's/^<!-- USER-SPACE -->.*?^<!-- \/USER-SPACE -->//ms' "$SCRIPT_DIR/$f"
+            perl -i -0pe 's/\n+$/\n/' "$SCRIPT_DIR/$f"
+            printf '\n%s\n' "$USER_SECTION" >> "$SCRIPT_DIR/$f"
+            echo "  ~ $f (USER-SPACE preserved)"
+        else
+            echo "  ~ $f"
+        fi
     else
         cp "$TMPDIR_UPDATE/files/$f" "$SCRIPT_DIR/$f"
         case "$f" in *.sh) chmod +x "$SCRIPT_DIR/$f" ;; esac
@@ -368,6 +508,31 @@ for f in "${UPDATED_FILES[@]}"; do
     fi
     APPLIED=$((APPLIED + 1))
 done
+
+# Detect pre-existing nested conflict markers before we propagate merged files.
+# This prevents stacking new 3-way merges on top of unresolved ones (issue #31).
+conflict_marker_files=()
+for cf in "$SCRIPT_DIR/CLAUDE.md" "$WORKSPACE_DIR/CLAUDE.md"; do
+    [ -f "$cf" ] && grep -q '^<<<<<<<' "$cf" && conflict_marker_files+=("$cf")
+done
+if [ "${#conflict_marker_files[@]}" -gt 0 ]; then
+    echo ""
+    echo "ОШИБКА: обнаружены неразрешённые конфликты слияния (вложенные маркеры):"
+    for cf in "${conflict_marker_files[@]}"; do echo "  - $cf"; done
+    echo "  Разрешите их вручную и перезапустите update.sh."
+    exit "$EXIT_CONFLICT"
+fi
+
+# CLAUDE.md conflict (issue #226): warn and remember, but keep going — propagation
+# and commit of everything else must not be blocked by one unresolved merge.
+if [ "$CLAUDE_CONFLICTS" -gt 0 ]; then
+    echo ""
+    echo "ОШИБКА: CLAUDE.md содержит неразрешённые конфликты слияния."
+    echo "  Конфликты обозначены <<<<<<< / ======= / >>>>>>>"
+    echo "  Разрешите их вручную в $SCRIPT_DIR/CLAUDE.md после завершения обновления."
+    CLAUDE_CONFLICT_DETECTED=true
+    CLAUDE_CONFLICT_FILES+=("$SCRIPT_DIR/CLAUDE.md")
+fi
 
 # Remove deprecated files
 for i in "${!DEPRECATED_FOUND[@]}"; do
@@ -452,8 +617,8 @@ if [ -f "$ENV_FILE" ]; then
             # Resolve workspace: ENV_WORKSPACE_DIR (если есть) → fallback dirname $SCRIPT_DIR
             DETECT_WS="${ENV_WORKSPACE_DIR:-$(dirname "$SCRIPT_DIR")}"
             DETECTED_GOV=""
-            if [ -d "${DETECT_WS}/DS-strategy" ]; then
-                DETECTED_GOV="DS-strategy"
+            if [ -d "${DETECT_WS}/${IWE_GOVERNANCE_REPO:-DS-strategy}" ]; then
+                DETECTED_GOV="${IWE_GOVERNANCE_REPO:-DS-strategy}"
             else
                 for d in "${DETECT_WS}"/DS-*; do
                     case "${d##*/}" in
@@ -462,8 +627,8 @@ if [ -f "$ENV_FILE" ]; then
                 done
             fi
             if [ -z "$DETECTED_GOV" ]; then
-                DETECTED_GOV="DS-strategy"
-                echo "  ⚠ Governance repo не найден в $DETECT_WS — fallback DS-strategy. Проверьте .exocortex.env вручную."
+                DETECTED_GOV="${IWE_GOVERNANCE_REPO:-DS-strategy}"
+                echo "  ⚠ Governance repo не найден в $DETECT_WS — fallback ${IWE_GOVERNANCE_REPO:-DS-strategy}. Проверьте .exocortex.env вручную."
             fi
             echo "GOVERNANCE_REPO=$DETECTED_GOV" >> "$ENV_FILE"
             echo "  ✓ Добавлено GOVERNANCE_REPO=$DETECTED_GOV в .exocortex.env (миграция 0.28.5)"
@@ -593,8 +758,15 @@ for f in "${NEW_FILES[@]}" "${UPDATED_FILES[@]}"; do
                 WS_CONFLICTS=$(grep -c '^<<<<<<<' "$TMPDIR_UPDATE/ws-claude-merged.md" 2>/dev/null || true); WS_CONFLICTS=${WS_CONFLICTS:-0}
                 cp "$TMPDIR_UPDATE/ws-claude-merged.md" "$WS_CURRENT"
                 cp "$WS_NEW" "$WS_BASE"
+                CLAUDE_CONFLICTS=$((CLAUDE_CONFLICTS + WS_CONFLICTS))
                 if [ "$WS_CONFLICTS" -gt 0 ]; then
-                    echo "  ✓ $WS_CURRENT обновлён (3-way merge, $WS_CONFLICTS конфликтов)"
+                    # issue #226: don't abort here — a CLAUDE.md conflict is an isolated
+                    # artifact, not a reason to skip the rest of the delivery (memory/hooks/
+                    # skills propagation, repair-pass, commit). Warn now, fail at the end.
+                    echo "  ~ $WS_CURRENT ($WS_CONFLICTS конфликтов — разрешите вручную)"
+                    echo "    Конфликты обозначены <<<<<<< / ======= / >>>>>>>"
+                    CLAUDE_CONFLICT_DETECTED=true
+                    CLAUDE_CONFLICT_FILES+=("$WS_CURRENT")
                 else
                     echo "  ✓ $WS_CURRENT обновлён (3-way merge)"
                 fi
@@ -618,9 +790,6 @@ for f in "${NEW_FILES[@]}" "${UPDATED_FILES[@]}"; do
 done
 
 # Copy memory files to Claude projects directory
-CLAUDE_PROJECT_SLUG="$(echo "$WORKSPACE_DIR" | tr '/' '-')"
-CLAUDE_MEMORY_DIR="$HOME/.claude/projects/$CLAUDE_PROJECT_SLUG/memory"
-
 if [ -d "$CLAUDE_MEMORY_DIR" ]; then
     MEM_UPDATED=0
     for f in "${NEW_FILES[@]}" "${UPDATED_FILES[@]}"; do
@@ -647,73 +816,58 @@ fi
 # Propagate skills, hooks, rules, lib, config, detectors to workspace if changed.
 # lib/config/detectors — runtime dependencies капчер-шины (capture-bus.sh) и детекторов.
 for f in "${NEW_FILES[@]}" "${UPDATED_FILES[@]}"; do
-    case "$f" in .claude/skills/*|.claude/hooks/*|.claude/rules/*|.claude/lib/*|.claude/config/*|.claude/detectors/*|.claude/scripts/*|.claude/agents/*|.claude/settings.json)
-        src="$SCRIPT_DIR/$f"
-        dst="$WORKSPACE_DIR/$f"
-        mkdir -p "$(dirname "$dst")"
-        cp "$src" "$dst"
-        echo "  ✓ $f → workspace"
-        ;;
+    case "$f" in
+        .claude/skills/*/SKILL.md)
+            src="$SCRIPT_DIR/$f"
+            dst="$WORKSPACE_DIR/$f"
+            mkdir -p "$(dirname "$dst")"
+            # 1. Extract USER_SECTION from workspace before overwriting
+            if [ -f "$dst" ]; then
+                USER_SECTION=$(sed -n '/^<!-- USER-SPACE -->/,/^<!-- \/USER-SPACE -->/p' "$dst" 2>/dev/null || true)
+            else
+                USER_SECTION=""
+            fi
+            # 2. Extract install_constants values from workspace frontmatter
+            if [ -f "$dst" ]; then
+                IC_BLOCK=$(awk '/^install_constants:/{found=1} found && /^[a-z][^:]+:/ && !/^install_constants:/{exit} found{print}' "$dst" 2>/dev/null || true)
+            else
+                IC_BLOCK=""
+            fi
+            # 3. Copy src (with {{KEY}} placeholders) → dst
+            cp "$src" "$dst"
+            # 4. Substitute install_constants: {{KEY}} → VALUE
+            if [ -n "$IC_BLOCK" ]; then
+                while IFS=': ' read -r key val; do
+                    key="${key#"${key%%[! ]*}"}"
+                    val="${val#"${val%%[! ]*}"}"
+                    [[ "$key" =~ ^[A-Z_]+$ ]] && [ -n "$val" ] || continue
+                    sed_inplace "s|{{${key}}}|${val}|g" "$dst"
+                done <<< "$IC_BLOCK"
+            fi
+            # 5. Reinject USER_SECTION
+            if [ -n "$USER_SECTION" ]; then
+                perl -i -0pe 's/^<!-- USER-SPACE -->.*?^<!-- \/USER-SPACE -->//ms' "$dst"
+                perl -i -0pe 's/\n+$/\n/' "$dst"
+                printf '\n%s\n' "$USER_SECTION" >> "$dst"
+                echo "  ✓ $f → workspace (USER-SPACE preserved)"
+            else
+                echo "  ✓ $f → workspace"
+            fi
+            ;;
+        .claude/skills/*|.claude/hooks/*|.claude/rules/*|.claude/rules-lazy/*|.claude/lib/*|.claude/config/*|.claude/detectors/*|.claude/scripts/*|.claude/agents/*|.claude/styles/*|.claude/templates/*|.claude/settings.json)
+            src="$SCRIPT_DIR/$f"
+            dst="$WORKSPACE_DIR/$f"
+            mkdir -p "$(dirname "$dst")"
+            cp "$src" "$dst"
+            echo "  ✓ $f → workspace"
+            ;;
     esac
 done
 
 # === Step 5d: Repair-pass для critical runtime files ===
-# Закрывает два gap-а:
-#   (1) «UNCHANGED ⇒ файл отсутствует» — ручное удаление / сбой предыдущего update.
-#   (2) «UNCHANGED ⇒ файл stale» — файл есть, но hash расходится с FMT source
-#       (возникает при частичном применении update, dirty workspace, или если workspace
-#       не перезаписывал существующий файл при прошлом update).
-# Выполняется ПОСЛЕ propagation чтобы repair не дублировал работу NEW_FILES/UPDATED_FILES.
-REPAIRED=0
-while IFS='|' read -r fpath _; do
-    [ -z "$fpath" ] && continue
-    [ ! -f "$SCRIPT_DIR/$fpath" ] && continue
-
-    case "$fpath" in
-        memory/*.md|memory/*.yaml|memory/*.yml)
-            fname=$(basename "$fpath")
-            [ "$fname" = "MEMORY.md" ] && continue
-            if [ -d "$CLAUDE_MEMORY_DIR" ]; then
-                mem_dst="$CLAUDE_MEMORY_DIR/$fname"
-                if [ ! -f "$mem_dst" ]; then
-                    cp "$SCRIPT_DIR/$fpath" "$mem_dst"
-                    echo "  ⟲ $fpath → memory/ (repair)"
-                    REPAIRED=$((REPAIRED + 1))
-                elif is_personal_config "$fname"; then
-                    : # личный L4-конфиг существует — НЕ stale-repair (персонализация ≠ дефолт по хешу)
-                elif [ -r "$mem_dst" ] && [ "$(hash_file "$SCRIPT_DIR/$fpath")" != "$(hash_file "$mem_dst")" ]; then
-                    cp "$SCRIPT_DIR/$fpath" "$mem_dst"
-                    echo "  ⟲ $fpath → memory/ (stale repair)"
-                    REPAIRED=$((REPAIRED + 1))
-                fi
-            fi
-            ;;
-        .claude/skills/*|.claude/hooks/*|.claude/rules/*|.claude/lib/*|.claude/config/*|.claude/detectors/*|.claude/scripts/*|.claude/agents/*|.claude/settings.json)
-            dst="$WORKSPACE_DIR/$fpath"
-            if [ ! -f "$dst" ]; then
-                mkdir -p "$(dirname "$dst")"
-                cp "$SCRIPT_DIR/$fpath" "$dst"
-                case "$fpath" in *.sh) chmod +x "$dst" ;; esac
-                echo "  ⟲ $fpath → workspace (repair)"
-                REPAIRED=$((REPAIRED + 1))
-            elif [ -r "$dst" ] && [ "$(hash_file "$SCRIPT_DIR/$fpath")" != "$(hash_file "$dst")" ]; then
-                cp "$SCRIPT_DIR/$fpath" "$dst"
-                case "$fpath" in *.sh) chmod +x "$dst" ;; esac
-                echo "  ⟲ $fpath → workspace (stale repair)"
-                REPAIRED=$((REPAIRED + 1))
-            fi
-            ;;
-    esac
-done < <(
-    python3 -c "
-import json
-with open('$MANIFEST') as f:
-    data = json.load(f)
-for entry in data.get('files', []):
-    print(entry['path'] + '|')
-" 2>/dev/null
-)
-[ "$REPAIRED" -gt 0 ] && echo "  ✓ $REPAIRED runtime-файлов восстановлено"
+# Выполняется ПОСЛЕ propagation, чтобы repair не дублировал работу NEW_FILES/UPDATED_FILES.
+# Определение функции — см. repair_pass() перед Step 2 (нужна там же для early-exit ветки).
+repair_pass
 
 # (Step 6b removed — repo rename no longer supported, no link migration needed)
 
@@ -883,16 +1037,88 @@ if [ -f "$MANIFEST" ]; then
         && echo "  • update-manifest.json: заменён remote manifest (v$UPSTREAM_VERSION)"
 fi
 
+# === Step 6f: Orphan detection — L1 files not in manifest ===
+# Warn about files present on disk in L1 directories that are not listed in
+# update-manifest.json (neither in files[] nor deprecated_files[]).
+# These may be stale user customisations or files left over from a renamed skill.
+# Never auto-deletes; always informational only.
+if command -v python3 &>/dev/null && [ -f "$SCRIPT_DIR/update-manifest.json" ]; then
+    ORPHAN_OUTPUT=$(python3 - <<'PYEOF'
+import json, os
+
+script_dir = os.path.dirname(os.path.abspath(__file__))
+manifest_path = os.path.join(script_dir, "update-manifest.json")
+
+with open(manifest_path) as f:
+    manifest = json.load(f)
+
+def _path(e): return e["path"] if isinstance(e, dict) else e
+known = {_path(e) for e in manifest.get("files", [])}
+deprecated = {_path(e) for e in manifest.get("deprecated_files", [])}
+all_known = known | deprecated
+
+L1_DIRS = [".claude/hooks", ".claude/rules", ".claude/skills"]
+L1_PREFIXES = ["memory/protocol-"]
+
+orphans = []
+for base in L1_DIRS:
+    full_base = os.path.join(script_dir, base)
+    if not os.path.isdir(full_base):
+        continue
+    for root, dirs, files in os.walk(full_base):
+        for fname in files:
+            full = os.path.join(root, fname)
+            rel = os.path.relpath(full, script_dir)
+            if rel not in all_known:
+                tag = "[maybe-L3]" if "extensions/" in rel else "[orphan]"
+                orphans.append((tag, rel))
+
+for tag, rel in sorted(orphans):
+    print(f"  {tag} {rel}")
+PYEOF
+)
+    if [ -n "$ORPHAN_OUTPUT" ]; then
+        echo ""
+        echo "⚠  Файлы в L1-директориях не найдены в манифесте (не удалять автоматически):"
+        echo "$ORPHAN_OUTPUT"
+        echo "   [orphan]   — возможно устаревший платформенный файл; удалите вручную или"
+        echo "               добавьте в deprecated_files если это намеренно удалённый артефакт."
+        echo "   [maybe-L3] — возможно пользовательское расширение (extensions/)."
+    fi
+fi
+
 # === Step 7: Commit changes ===
 echo ""
 echo "Фиксация изменений..."
 cd "$SCRIPT_DIR"
-if ! git diff --quiet 2>/dev/null || [ -n "$(git ls-files --others --exclude-standard 2>/dev/null)" ]; then
-    git add -A
-    git commit -m "chore: update from upstream template v$UPSTREAM_VERSION" --no-verify 2>&1 | sed 's/^/  /'
-    echo "  ✓ Изменения закоммичены"
-else
-    echo "  Нет изменений для коммита"
+
+# issue #226: если HEAD стоит не на дефолтной ветке (например, контрибьютор оставил
+# чекаут на PR-ветке после предыдущей работы), автокоммит обновления загрязнит эту
+# ветку. Предупредить и, без явного согласия, коммит пропустить.
+CURRENT_BRANCH="$(git branch --show-current 2>/dev/null || true)"
+SKIP_COMMIT=false
+if [ -n "$CURRENT_BRANCH" ] && [ "$CURRENT_BRANCH" != "$BRANCH" ]; then
+    echo "⚠ Текущая ветка репозитория — '$CURRENT_BRANCH', не '$BRANCH'."
+    echo "  Коммит обновления попадёт в неё и может загрязнить открытый PR."
+    if $AUTO_YES; then
+        echo "  Коммит пропущен (--yes на нестандартной ветке)."
+        echo "  Переключитесь на '$BRANCH' и запустите update.sh снова, либо закоммитьте вручную."
+        SKIP_COMMIT=true
+    else
+        read -p "  Всё равно закоммитить в '$CURRENT_BRANCH'? (y/n) " -n 1 -r
+        echo ""
+        [[ $REPLY =~ ^[Yy]$ ]] || SKIP_COMMIT=true
+    fi
+fi
+
+if ! $SKIP_COMMIT; then
+    if ! git diff --quiet 2>/dev/null || [ -n "$(git ls-files --others --exclude-standard 2>/dev/null)" ]; then
+        git add -A
+        git commit -m "chore: update from upstream template v$UPSTREAM_VERSION" --no-verify 2>&1 | sed 's/^/  /'
+        echo "  ✓ Изменения закоммичены"
+    else
+        echo "  Нет изменений для коммита"
+    fi
 fi
 
 # === Step 7.5: Migration hint — initial-marker для old clones (0.28.5+) ===
@@ -925,3 +1151,14 @@ echo "$SUMMARY_MSG"
 echo "=========================================="
 echo ""
 echo "Перезапустите Claude Code для применения обновлений в memory/."
+
+# issue #226: остальная доставка (memory/hooks/skills, repair-pass, коммит) уже
+# выполнена выше независимо от конфликта — теперь сообщаем и выходим с ошибкой,
+# чтобы CI/скрипты-обёртки увидели неуспех, а пилот — список файлов на разрешение.
+if $CLAUDE_CONFLICT_DETECTED; then
+    echo ""
+    echo "⚠ CLAUDE.md содержит неразрешённые конфликты слияния в:"
+    for cf in "${CLAUDE_CONFLICT_FILES[@]}"; do echo "  - $cf"; done
+    echo "  Разрешите их вручную (маркеры <<<<<<< / ======= / >>>>>>>) и закоммитьте отдельно."
+    exit "$EXIT_CONFLICT"
+fi

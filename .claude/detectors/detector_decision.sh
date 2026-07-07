@@ -1,6 +1,6 @@
 #!/bin/bash
 # detector_decision.sh
-# see DP.SC.025 (capture-bus service clause), DP.ROLE.001#R29 (Детектор)
+# see DP.SC.025 (capture-bus service clause), DP.ROLE.001#R47 (Детектор)
 # event_type: decision_user
 # cost_class: free (rule-based, regex на транскрипт)
 # runtime: shell
@@ -50,7 +50,12 @@ if [ -z "$TRANSCRIPT_PATH" ] || [ ! -f "$TRANSCRIPT_PATH" ]; then
 fi
 
 # Определяем target_repo: cwd → IWE repo
-IWE_ROOT="${IWE_ROOT:-$HOME/IWE}"
+# Load unified environment: WORKSPACE_DIR, IWE_ROOT, IWE_SCRIPTS, etc.
+DETECTOR_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CLAUDE_DIR="$(cd "$DETECTOR_DIR/.." && pwd)"
+# shellcheck source=../lib/iwe-env-bootstrap.sh
+source "$CLAUDE_DIR/lib/iwe-env-bootstrap.sh" || exit 1
+
 TARGET_REPO_HINT=""
 if [ -n "$CWD" ] && [[ "$CWD" == "$IWE_ROOT"/* ]]; then
   REL="${CWD#$IWE_ROOT/}"

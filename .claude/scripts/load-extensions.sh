@@ -12,7 +12,7 @@
 #   bash load-extensions.sh day-close after
 #   bash load-extensions.sh protocol-close checks
 #
-# Output: пути относительно $IWE_WORKSPACE/extensions/, по одному на строку, sorted.
+# Output: абсолютные пути к extension-файлам, по одному на строку, sorted.
 # Exit: 0 — есть extensions; 1 — нет (skill пропускает шаг).
 #
 # Реализует contract из extensions/README.md:
@@ -30,13 +30,28 @@ if [ -z "$PROTOCOL" ] || [ -z "$HOOK" ]; then
     exit 2
 fi
 
-# Resolve workspace
-WORKSPACE="${IWE_WORKSPACE:-${WORKSPACE_DIR:-}}"
-if [ -z "$WORKSPACE" ]; then
-    # Fallback: parent of script's grandparent (FMT-exocortex-template/.claude/scripts/)
-    SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-    WORKSPACE="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")"
-fi
+# Resolve workspace — пробуем несколько переменных, проверяя существование директории.
+# Фикс bug-2026-05-14: ранее IWE_WORKSPACE мог указывать на несуществующую tmp-директорию
+# (остаток smoke-test), и fallback не срабатывал из-за лишнего dirname.
+resolve_workspace() {
+    local candidates=("${IWE_WORKSPACE:-}" "${WORKSPACE_DIR:-}" "${IWE_ROOT:-}" "${IWE:-}")
+    for c in "${candidates[@]}"; do
+        [ -n "$c" ] && [ -d "$c/extensions" ] && { echo "$c"; return 0; }
+    done
+
+    # Fallback: определяем директорию скрипта через BASH_SOURCE[0] (надёжнее $0).
+    local script_source="${BASH_SOURCE[0]:-$0}"
+    local script_dir
+    script_dir="$(cd "$(dirname "$script_source")" && pwd)"
+    # script_dir = .../IWE/.claude/scripts  →  workspace = .../IWE
+    local ws
+    ws="$(dirname "$(dirname "$script_dir")")"
+    [ -d "$ws/extensions" ] && { echo "$ws"; return 0; }
+
+    return 1
+}
+
+WORKSPACE="$(resolve_workspace)"
 
 EXT_DIR="$WORKSPACE/extensions"
 [ -d "$EXT_DIR" ] || { exit 1; }
@@ -46,7 +61,7 @@ EXT_DIR="$WORKSPACE/extensions"
 #   day-close.after.md
 #   day-close.after.health.md
 #   day-close.after.linear.md
-FOUND=$(find "$EXT_DIR" -maxdepth 1 -type f -name "${PROTOCOL}.${HOOK}.md" -o -name "${PROTOCOL}.${HOOK}.*.md" 2>/dev/null | sort)
+FOUND=$(find -L "$EXT_DIR" -maxdepth 1 \( -type f -name "${PROTOCOL}.${HOOK}.md" -o -name "${PROTOCOL}.${HOOK}.*.md" \) 2>/dev/null | while IFS= read -r f; do [ -e "$f" ] && echo "$f"; done | sort)
 
 if [ -z "$FOUND" ]; then
     exit 1

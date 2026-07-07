@@ -1,0 +1,112 @@
+# translation-manifest.yaml — WP-415 Фаза В1 Bootstrap
+# RU source: TserenTserenov/FMT-exocortex-template (authoritative)
+# EN target:  iwesys/FMT-exocortex-template (pipeline output, do not edit by hand)
+# Created: peer-session 2026-06-19-03-wp415
+
+schema_version: 1
+source_lang: ru
+target_lang: en
+target_org: iwesys
+target_repo: FMT-exocortex-template
+
+# EXCLUSION LIST — identifiers never to translate
+# Rule: if in doubt, add here. Over-exclusion beats under-exclusion.
+exclusions:
+  id_patterns:
+    - "AR\\.\\d+"            # agent rules: AR.001
+    - "DP\\.[A-Z]+\\.\\d+"   # platform IDs: DP.SC.001, DP.ROLE.NNN
+    - "WP-\\d+"              # work products: WP-415
+    - "PD\\.[A-Z]+\\.\\d+"   # personal dev: PD.FORM.090
+    - "MIM\\.[A-Z]+\\.\\d+"  # MIM IDs
+    - "FPF\\.[A-Z]+"         # FPF refs: FPF.A.2.1
+    - "ZP\\.[A-Z]+"          # ZP refs
+    - "VR\\.[A-Z]+\\.\\d+"   # verifier roles: VR.R.001
+    - "S-\\d+"               # staging rules: S-33
+    - "B\\d+\\.\\d+"         # security checklist: B7.3
+    - "HD #\\d+"             # hard distinctions: HD #29
+  proper_names:
+    - iwesys
+    - MimEcoSys
+    - aisystant
+    - mimsys
+    - TserenTserenov
+    - FMT-exocortex-template
+    - iwe-local-gateway
+    - FMT-s2r
+    - CLAUDE.md
+    - AGENTS.md
+    - AGENTS-agent-blocks.md
+    - params.yaml
+    - PACK-agent-rules
+    - PACK-digital-platform
+    - PACK-personal
+    - SPF
+    - FPF
+    - ZP
+    - IWE
+    - Day Open
+    - Day Close
+    - Week Close
+
+frontmatter_translate_keys:
+  - title
+  - description
+  - summary
+
+# FILE CATEGORIES
+# Д — Documentation: auto-translate via LLM pipeline + glossary
+# И — Instructions (agent): manual adaptation only, CI drift-check
+# Г — Hybrid: treat as И on MVP; body/frontmatter split deferred
+# Н — No touch: code, config, secrets, workflows
+
+categories:
+  D:
+    policy: auto_translate
+    description: "User-facing documentation — auto pipeline with glossary"
+    glossary: translation/glossary-v0.1.csv
+    files:
+      - README.md
+      - docs/
+    # Blank fill-in templates: frontmatter list values are station
+    # identifiers, not prose — the single-key-value translate path can't
+    # handle them, so they always trip the tier-1 glossary check. Route
+    # to category G (manual_adapt) instead of chasing per-file exceptions.
+    exclude:
+      - docs/developer/card-template.md
+
+  I:
+    policy: manual_adapt
+    description: "Agent instructions — require human adaptation for EN context"
+    drift_check: true
+    files:
+      - CLAUDE.md
+      - AGENTS.md
+      - AGENTS-agent-blocks.md
+      - .claude/rules/
+      - .claude/skills/**/SKILL.md
+      - params.yaml
+      - scripts/install-hooks.sh
+
+  G:
+    policy: manual_adapt
+    description: "Hybrid: MVP = treat as I; incremental split after pipeline stabilization"
+    files:
+      - CHANGELOG.md
+      - CONTRIBUTING.md
+      - .claude/skills/**/README.md
+      - docs/developer/card-template.md
+
+  N:
+    policy: skip
+    description: "Code, config, workflows, secrets — never translate"
+    files:
+      - "**/*.py"
+      - "**/*.sh"
+      - "**/*.ts"
+      - "**/*.js"
+      - "**/*.yaml"
+      - "**/*.json"
+      - "**/*.toml"
+      - ".github/workflows/"
+      - ".git/"
+      - translation-manifest.yaml

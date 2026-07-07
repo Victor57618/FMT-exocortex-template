@@ -29,7 +29,7 @@ portable_date_offset() {
     date -v-${days}d +"$fmt" 2>/dev/null || date -d "$days days ago" +"$fmt" 2>/dev/null
 }
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 WORKSPACE="$HOME/IWE"
 GOVERNANCE_DIR="${GOVERNANCE_DIR:-$WORKSPACE/DS-strategy}"
 LOG_DIR="$HOME/logs/synchronizer"
@@ -213,14 +213,18 @@ for _, path in repos:
     ins_7d += i
     dels_7d += d
 
-# ADR-009 (WP-109 Ф3): commits_today/7d/30d теперь агрегируются
-# из user_events через dt_sync. Здесь -- только уникальные поля
-# (repos_active, files_changed, lines), которых нет в sync-iwe.
+# ADR-009 (WP-109 Ф3) REVERT (6 май 2026): commits возвращены в локальный сбор.
+# GitHub App webhooks для IWE-репо не доходят → commits_30d = 0 через dt_sync.
+# Fallback: считаем из локального git log. Если webhook pipeline заработает —
+# dt_calc.py возьмёт max(local, webhook) или webhook-значение приоритетом.
 result = {
     'repos_active_7d': repos_7d[:15],
     'files_changed_7d': files_7d,
     'lines_added_7d': ins_7d,
     'lines_removed_7d': dels_7d,
+    'commits_today': commits_today,
+    'commits_7d': commits_7d,
+    'commits_30d': commits_30d,
 }
 print(json.dumps(result))
 " 2>/dev/null || echo "{}"
@@ -231,7 +235,7 @@ print(json.dumps(result))
 # ============================================================
 
 collect_sessions() {
-    local SESSION_LOG="$WORKSPACE/DS-strategy/inbox/open-sessions.log"
+    local SESSION_LOG="$GOVERNANCE_DIR/inbox/open-sessions.log"
 
     python3 -c "
 import json, os, re
@@ -291,37 +295,86 @@ print(json.dumps(result))
 # ============================================================
 
 collect_wp() {
+    # Источник: WP-REGISTRY.md (после ОПТ-4/WP-297 Ф6.3 таблица РП удалена из MEMORY.md).
+    # Формат строки: | <NNN> | <P> | <Название> | <Ст> | <Репо> | <Бюджет> |
+    # Статусы: ✅ done · 🔄 in_progress · ⏳ pending · 📦 archived · ↗️ merged · 🧪 testing
+    local REGISTRY_FILE="$GOVERNANCE_DIR/docs/WP-REGISTRY.md"
     local MEMORY_FILE="$HOME/.claude/projects/-Users-$(whoami)-IWE/memory/MEMORY.md"
 
     python3 -c "
-import json, os, re
+import json, os
 
+registry_path = '$REGISTRY_FILE'
 memory_path = '$MEMORY_FILE'
 done = 0
 in_progress = 0
+pending = 0
 
-if os.path.exists(memory_path):
-    with open(memory_path) as f:
+def parse_registry(path):
+    d = ip = pn = 0
+    with open(path, encoding='utf-8') as f:
         in_table = False
         for line in f:
-            # Look for the WP table
-            if '| # | РП' in line or '| --- |' in line:
+            # Заголовок: | # | P | Название | Ст | Репо | Бюджет |
+            if line.lstrip().startswith('| #') and ' Ст ' in line:
+                in_table = True
+                continue
+            if not in_table:
+                continue
+            # Сепаратор строк таблицы пропускаем
+            if line.lstrip().startswith('|---') or line.lstrip().startswith('| ---'):
+                continue
+            if not line.lstrip().startswith('|'):
+                in_table = False
+                continue
+            cells = [c.strip() for c in line.strip().strip('|').split('|')]
+            if len(cells) < 4:
+                continue
+            status = cells[3]
+            # ↗️ merged и 🧪 testing — не учитываем в done/active
+            if '✅' in status:
+                d += 1
+            elif '🔄' in status:
+                ip += 1
+            elif '⏳' in status:
+                pn += 1
+            elif '📦' in status:
+                # archived = терминальный успешный, считаем как done
+                d += 1
+    return d, ip, pn
+
+def parse_memory_legacy(path):
+    # Совместимость с инсталляциями где MEMORY.md ещё содержит таблицу РП
+    d = ip = 0
+    with open(path, encoding='utf-8') as f:
+        in_table = False
+        for line in f:
+            if '| # | РП' in line:
                 in_table = True
                 continue
             if in_table:
                 if line.strip() == '' or line.startswith('---'):
                     in_table = False
                     continue
-                if '| done' in line.lower() or '~~done~~' in line.lower():
-                    done += 1
-                elif 'in_progress' in line.lower():
-                    in_progress += 1
-                elif '| done |' in line:
-                    done += 1
+                low = line.lower()
+                if '✅' in line or '| done' in low or '~~done~~' in low:
+                    d += 1
+                elif '🔄' in line or 'in_progress' in low:
+                    ip += 1
+    return d, ip
+
+try:
+    if os.path.exists(registry_path):
+        done, in_progress, pending = parse_registry(registry_path)
+    elif os.path.exists(memory_path):
+        done, in_progress = parse_memory_legacy(memory_path)
+except Exception:
+    pass
 
 result = {
     'wp_completed_total': done,
     'wp_in_progress_count': in_progress,
+    'wp_pending_count': pending,
 }
 print(json.dumps(result))
 " 2>/dev/null || echo "{}"
@@ -417,14 +470,18 @@ def parse_mult_section_budget(filepath):
     with open(filepath) as f:
         content = f.read()
     patterns = [
-        r'закрыт[^|]*?\|\s*~?\s*(\d+(?:\.\d+)?)\s*h',              # table-cell format
+        r'закрыт[^|]*?\|\s*\*{0,2}~?\s*(\d+(?:\.\d+)?)\s*h',       # table-cell format (optional ** before value)
         r'Бюджет\s+закрыт[:\*\s]+~?\s*(\d+(?:\.\d+)?)\s*h',        # bullet/bold format
     ]
     for line in content.split('\\n'):
         if 'Бюджет закрыт' not in line:
             continue
-        # Skip header row with 'День | WakaTime | Бюджет закрыт | Мультипликатор'
-        if 'WakaTime' in line and 'Мультипликатор' in line:
+        # Skip table header rows only (e.g. '| День | WakaTime | Бюджет закрыт | Мультипликатор |')
+        # Inline day-summary lines like '**WakaTime:** ... | **Бюджет закрыт:** ~27h | **Мультипликатор:**...'
+        # must NOT be skipped — they ARE the data.
+        if re.search(r'\|\s*День\s*\|', line):
+            continue
+        if 'WakaTime' in line and 'Мультипликатор' in line and '**Бюджет закрыт' not in line:
             continue
         for pat in patterns:
             m = re.search(pat, line)
@@ -494,7 +551,7 @@ def parse_weekplan_budget_for_date(date_str, gov_dir):
         os.path.join(gov_dir, 'archive', 'week-plans', 'WeekPlan W*.md'),
         os.path.join(gov_dir, 'current', 'WeekPlan W*.md'),
     ]
-    # \S+ матчил "W16:" в "Итоги W16: 13 апр" раньше дневного "Итоги пн 13 апр" — block-split bug
+    # \\S+ матчил W16: в Итоги W16: 13 апр раньше дневного Итоги пн 13 апр — block-split bug
     section_re = re.compile(rf'Итоги\s+(?:пн|вт|ср|чт|пт|сб|вс)\s+{day_num}\s+{month_ru}', re.IGNORECASE)
     for pat in wp_patterns:
         for wp in glob.glob(pat):
@@ -876,6 +933,12 @@ p_know = json.loads('''$plugin_know_arr''')
 iwe = {**git, **sessions, **wp, **health, **mult, **registry, **sched}
 for p in p_iwe:
     iwe.update(p)
+
+# WakaTime raw fields — всегда добавлять если есть (WP-299 Ф4)
+for k in ('coding_seconds_today', 'coding_seconds_7d', 'coding_seconds_30d', 'coding_active_days_30d'):
+    v = waka.get(k)
+    if v is not None:
+        iwe[k] = v
 
 # Daily multiplier
 waka_today = waka.get('coding_seconds_today', 0)

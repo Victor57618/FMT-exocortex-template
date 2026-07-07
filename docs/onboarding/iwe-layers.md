@@ -61,7 +61,7 @@ extensions/day-close.before.md  ← выполняется ДО day-close
 ```yaml
 author_mode: false        # true = автор шаблона, прямое редактирование L1
 governance_repo: DS-strategy   # имя твоего стратегического репо
-strategy_day: monday      # день стратегической сессии
+strategy_day: sunday      # день стратегической сессии
 ```
 
 ---

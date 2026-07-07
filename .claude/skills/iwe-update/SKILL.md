@@ -1,9 +1,12 @@
 ---
 name: iwe-update
-description: "Обновление IWE с объяснением изменений. Агент вызывает update.sh, парсит CHANGELOG, объясняет что изменилось, помогает адаптировать обновления к кастомизациям пользователя."
+description: "Update IWE with change explanations. Agent calls update.sh, parses CHANGELOG, explains what changed, helps adapt updates to user customizations."
 argument-hint: ""
 user_invocable: true
 version: 1.0.0
+routing:
+  executor: haiku
+  deterministic: false
 ---
 
 # IWE Update (агент-обновитель)

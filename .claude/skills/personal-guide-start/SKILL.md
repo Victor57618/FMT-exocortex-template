@@ -1,10 +1,13 @@
 ---
 name: personal-guide-start
-description: Bootstrap-обёртка — создаёт пустой репо `personal-guide` под аккаунтом пилота (плоское имя, без логина в названии; если ещё нет), затем вызывает /personal-guide-render для наполнения 6 файлами. Используй когда пилот в первый раз просит «создай мне персональное руководство», «хочу начать программу личного развития», «собери мне стартовый план».
+description: Bootstrap wrapper — creates an empty personal-guide repo under the pilot's account (flat name, no login in the name; if not yet created), then calls /personal-guide-render to populate 6 files. Use when pilot first asks 'create my personal guide', 'I want to start a personal development program', 'build me a starter plan'.
 argument-hint: "[необязательно: override домена — knowledge-worker / generic]"
 experimental: true
 sunset: "после DONE WP-222 (Портной, ~июнь 2026) и WP-149 Ф6 (книга ЛР v3)"
 related: [personal-guide-render, WP-245, WP-222, WP-149, PD.FORM.089, PD.CAT.003]
+routing:
+  executor: sonnet
+  deterministic: false
 ---
 
 # Bootstrap персонального руководства
@@ -19,7 +22,7 @@ related: [personal-guide-render, WP-245, WP-222, WP-149, PD.FORM.089, PD.CAT.003
 
 ## Контракт скилла
 
-- **Вход:** активная подписка «Бесконечное развитие» (DP.SC.112). Доступ к `create_repository`, `github_status`. (Память.Derived и `personal_write` нужны на втором шаге — там их проверит `/personal-guide-render`.)
+- **Вход:** активная подписка «Инженерия интеллекта» (ранее «Бесконечное развитие») (DP.SC.112). Доступ к `create_repository`, `github_status`. (Память.Derived и `personal_write` нужны на втором шаге — там их проверит `/personal-guide-render`.)
 - **Выход:** репо `personal-guide` под аккаунтом пилота существует на GitHub + 6 файлов записаны (через делегирование render-скиллу). Имя репо — константа для всех пилотов: один личный GitHub-аккаунт = один репо ЛР, ФИО/login в названии не нужен.
 - **Время:** ≤60 мин с момента вызова до открытого в VS Code репо (критерий MVP из WP-188 Ф4.5).
 - **Идемпотентность:** повторный вызов на существующем репо безопасен — Шаг 1 reuse, Шаг 2 пересобирает контент.
@@ -71,6 +74,15 @@ Render-скилл сделает: чтение Память.Derived → ступ
 ```
 
 **Важно:** `create_repository` создаёт репо только в облаке (GitHub) и регистрирует через `personal_list_sources`, но **не клонирует** на диск пилота. Без локального клона все правки идут только через `personal_write` MCP-инструмент. Подсказка про `git clone` обязательна.
+
+## Verification
+
+Bootstrap создаёт внешний ресурс (GitHub-репо) — перед сообщением об успехе проверь контрактный выход (Контракт §Выход), не считай «вызвал create_repository» за «репо готово»:
+
+1. **Репо существует.** Вызови `github_status` — источник `personal-guide` присутствует. Нет → bootstrap не состоялся (вероятно 401 / GitHub не подключён), вернись к Шагу 1, не выдавай подсказку про `git clone`.
+2. **6 файлов записаны.** Render-скилл (Шаг 2) вернул подтверждение со списком 6 файлов. Render не подтвердил запись → bootstrap не завершён, перезапусти Шаг 2.
+
+Только при обоих PASS переходи к подсказке `git clone` (Шаг 3). Иначе — сообщи пилоту, какой из двух пунктов не выполнен, и что делать.
 
 ## Граница с `/personal-guide-render`
 

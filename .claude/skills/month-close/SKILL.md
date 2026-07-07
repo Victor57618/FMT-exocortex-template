@@ -3,6 +3,19 @@ name: month-close
 description: "Протокол закрытия месяца (Month Close). Стадия 7 каскада ВДВ v9 (PD.METHOD.008). Запускается в первый Пн месяца, до Strategy Session."
 argument-hint: ""
 version: 1.0.0
+layer: L1
+status: active
+triggers:
+  slash: [/month-close]
+  phrases: []
+routing:
+  executor: opus
+  deterministic: false
+agents: single
+interaction: multi-step
+gates_required: []
+gates_enforced: []
+gates_rationale: "операционный скилл; WP Gate применим только при создании нового РП, не для операционных вызовов"
 ---
 
 # Month Close (протокол закрытия месяца)
@@ -12,6 +25,10 @@ version: 1.0.0
 > **Принцип:** Month Close = агрегация 4-5 Week Close'ов + переосмысление фазы/калибра. Не повторяет Week Close, опирается на его выходы.
 > **Позиция в ВДВ v9:** стадия 7 «Закрытие месяца». Вход = Report W{N} предыдущего месяца + Strategy.md. Выход = Strategy.md § Результаты месяца (R1-RN) + `archive/MonthClose YYYY-MM.md`.
 > **SKILL.md = L1 платформенный файл.** Пользователь не редактирует напрямую — только через `extensions/`.
+
+## When to use
+
+Протокол закрытия месяца (Month Close). Стадия 7 каскада ВДВ v9 (PD.METHOD.008). Запускается в первый Пн месяца, до Strategy Session.
 
 ## БЛОКИРУЮЩЕЕ: пошаговое исполнение
 
@@ -26,7 +43,7 @@ Month Close = протокол. Исполнять ТОЛЬКО пошагово
 2. **Week Close предыдущей недели выполнен?** Report W{N-1} существует в `current/` или `archive/`. Если нет — СТОП, сначала `/week-close`.
 3. **Month Close прошлого месяца архивирован?** `archive/MonthClose YYYY-MM.md` существует (для месяцев после MVP). Если нет (первый прогон мая 2026) — пропустить проверку.
 
-## Алгоритм
+## Algorithm
 
 ### 0. Extensions (before)
 Загрузить: `bash .claude/scripts/load-extensions.sh month-close before`. Exit 0 → `Read` каждый файл из вывода (alphabetic) → выполнить как первые шаги. Exit 1 → пропустить. Поддерживает `extensions/month-close.before.md` И `extensions/month-close.before.<suffix>.md`.
@@ -50,18 +67,18 @@ done
 
 **1d. Drift месячный.** `bash ${IWE_SCRIPTS:-$HOME/IWE/scripts}/iwe-drift.sh` → выявить пары, где lag вырос за месяц.
 
-**1e. Decision log.** `{{GOVERNANCE_REPO}}/exocortex/decisions/decision-log-YYYY-MM.md` (WP-109 Ф7, реализация: один файл на месяц) — решения, принятые за месяц.
+**1e. Decision log.** `${IWE_GOVERNANCE_REPO:-DS-strategy}/exocortex/decisions/decision-log-YYYY-MM.md` (WP-109 Ф7, реализация: один файл на месяц) — решения, принятые за месяц.
 
 **1f. Метрики файлов memory (WP-217 Ф10.2).**
 
 ```bash
-bash ${IWE_SCRIPTS}/memory-health.sh
-bash ${IWE_SCRIPTS}/memory-bleed.sh
+bash ${IWE_SCRIPTS:-$HOME/IWE/scripts}/memory-health.sh
+bash ${IWE_SCRIPTS:-$HOME/IWE/scripts}/memory-bleed.sh
 ```
 
 HOT-лимит превышен → понизить horizon в frontmatter нужных файлов ДО дальнейших шагов. Кандидаты на понижение из bleed-отчёта → зафиксировать в `MonthClose YYYY-MM.md § T-чеклист T23`.
 
-**1g. Стабильные входы (PD.METHOD.008 стадия 7 входы 5+6).** Прочитать `{{GOVERNANCE_REPO}}/docs/Dissatisfactions.md` (список НЭП) + `{{GOVERNANCE_REPO}}/docs/Projects.md` (список проектов P1-P6). Без них ревизия проектов (Шаг 4) и промоция новых R (Шаг 9) не имеют контекста.
+**1g. Стабильные входы (PD.METHOD.008 стадия 7 входы 5+6).** Прочитать `${IWE_GOVERNANCE_REPO:-DS-strategy}/docs/Dissatisfactions.md` (список НЭП) + `${IWE_GOVERNANCE_REPO:-DS-strategy}/docs/Projects.md` (список проектов P1-P6). Без них ревизия проектов (Шаг 4) и промоция новых R (Шаг 9) не имеют контекста.
 
 ### 2. Мультипликатор месяца
 
@@ -122,7 +139,7 @@ HOT-лимит превышен → понизить horizon в frontmatter ну
 2. Фактическая частота за 3 окна: `bash ${IWE_SCRIPTS:-$HOME/IWE/scripts}/iwe-drift.sh --activity` → счётчик.
 3. Решение человека:
    - **active → dormant:** переместить в секцию «Спящие действия» соответствующего чеклиста, пометить `dormant_from: YYYY-MM-DD`
-   - **dormant → archived:** перенести в `{{GOVERNANCE_REPO}}/archive/retired-actions.md` с причиной
+   - **dormant → archived:** перенести в `${IWE_GOVERNANCE_REPO:-DS-strategy}/archive/retired-actions.md` с причиной
    - **dormant → active (реактивация):** вернуть в основной чеклист, пометить `reactivated_from: YYYY-MM-DD`, причина.
 4. Зафиксировать решения в `MonthClose YYYY-MM.md § Decommission`.
 
@@ -130,7 +147,7 @@ HOT-лимит превышен → понизить horizon в frontmatter ну
 
 > Обзор решений месяца из WP-109 Ф7 decision register.
 
-1. Открыть `{{GOVERNANCE_REPO}}/exocortex/decisions/decision-log-YYYY-MM.md` (WP-109 Ф7, один файл на месяц).
+1. Открыть `${IWE_GOVERNANCE_REPO:-DS-strategy}/exocortex/decisions/decision-log-YYYY-MM.md` (WP-109 Ф7, один файл на месяц).
 2. Для каждого решения месяца ответить:
    - **Оказалось правильным / неправильным / рано судить?**
    - Если неправильное: какой сигнал был пропущен? → кандидат в `memory/feedback_*.md` как урок.
@@ -149,12 +166,22 @@ HOT-лимит превышен → понизить horizon в frontmatter ну
 
 ### 10. Запись `MonthClose YYYY-MM.md`
 
-Создать `{{GOVERNANCE_REPO}}/archive/MonthClose YYYY-MM.md` по шаблону (секция «Шаблон отчёта» ниже). Все разделы заполнены, плейсхолдеры заменены.
+Создать `${IWE_GOVERNANCE_REPO:-DS-strategy}/archive/MonthClose YYYY-MM.md` по шаблону (секция «Шаблон отчёта» ниже). Все разделы заполнены, плейсхолдеры заменены.
 
-### 11. Коммит {{GOVERNANCE_REPO}}
+### 11. Коммит ${IWE_GOVERNANCE_REPO:-DS-strategy}
 
 ```bash
-cd {{WORKSPACE_DIR}}/{{GOVERNANCE_REPO}} && git add -A && git commit -m "month-close: close YYYY-MM"
+cd ~/IWE/${IWE_GOVERNANCE_REPO:-DS-strategy}
+# НЕ `git add -A`: в общем клоне (multi-agent) сметает чужое pre-staged → mis-attribution
+# (см. sessions/2026-06/2026-06-20-39-*). Перечисли артефакты month-close ЯВНО:
+MONTH_FILES=(
+  "archive/MonthClose YYYY-MM.md"
+  "docs/Strategy.md"
+  # + archive/retired-actions.md, exocortex/decisions/decision-log-YYYY-MM.md,
+  #   memory/t-checklist.md — добавь те, что фактически правил в этом month-close
+)
+git add "${MONTH_FILES[@]}"
+git commit -m "month-close: close YYYY-MM" -- "${MONTH_FILES[@]}"
 ```
 
 Push при явном триггере «заливай».
@@ -262,7 +289,7 @@ verified: R23 Верификатор
 - [ ] Strategy.md § Черновик следующего месяца промотирован в Фокус
 - [ ] Если фаза/калибр сдвинулись — обновлены соответствующие секции Strategy.md
 - [ ] `archive/MonthClose YYYY-MM.md` создан, все секции заполнены
-- [ ] {{GOVERNANCE_REPO}} закоммичен
+- [ ] ${IWE_GOVERNANCE_REPO:-DS-strategy} закоммичен
 - [ ] Верификация R23 пройдена (или явно пропущена)
 
 Все ✅ → «Месяц закрыт. Готов к Strategy Session первой недели.» Иначе — указать что осталось.
@@ -285,3 +312,6 @@ verified: R23 Верификатор
 ## История
 
 - 2026-04-24: скилл создан (WP-196 Ф12.2 + WP-226 Ф2 add-ons). Первый прогон — 4 мая 2026 на закрытие апреля.
+
+<!-- USER-SPACE -->
+<!-- /USER-SPACE -->

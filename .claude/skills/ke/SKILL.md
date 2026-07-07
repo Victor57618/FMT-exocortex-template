@@ -1,7 +1,10 @@
 ---
 name: ke
-description: Knowledge Extraction — извлечение и маршрутизация знания на рубеже работы. Используй когда обнаружен паттерн, принято решение, найдено различение или завершена подзадача.
+description: Knowledge Extraction — captures and routes knowledge at work boundaries. Use when you discover a pattern, make a decision, find a distinction, or complete a sub-task.
 argument-hint: "[что извлечь]"
+routing:
+  executor: sonnet
+  deterministic: false
 ---
 
 # Knowledge Extraction (Capture-to-Pack)

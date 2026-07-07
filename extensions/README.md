@@ -199,6 +199,24 @@ cp my-extension-pack/extensions/* ~/IWE/extensions/
 
 **Важно:** `update.sh` не трогает `extensions/mcp-user.json` — ваши MCP в безопасности при обновлениях.
 
+## Фильтрация контекста Kimi (.agentigore)
+
+Файл `.agentigore` в корне репо управляет тем, что Kimi **не видит** как контекст при работе через `kimi-peer-adapter.sh`. Синтаксис как у `.gitignore`.
+
+**Важно:** имя файла — `.agentigore` (не `.agentignore`). Именно это имя читает `kimi-peer-adapter.sh`.
+
+Чтобы создать файл, скопируй образец:
+```bash
+cp extensions/agentigore.sample .agentigore
+```
+
+Три уровня приоритета:
+- **LEVEL-1** — секреты и приватное (`.secrets/`, `personal/`): всегда игнорировать
+- **LEVEL-2** — тяжёлый контекст (`docs/`, `archive/`): игнорировать без прямой задачи
+- **LEVEL-3** — по умолчанию включён: не добавлять без причины
+
+Файл `.agentigore` не влияет на git — только на Kimi. `update.sh` его не затрагивает.
+
 ## Правила
 
 1. Имена файлов: `<protocol>.<hook>.md` или `<protocol>.<hook>.<suffix>.md`

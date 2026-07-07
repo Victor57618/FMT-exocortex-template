@@ -35,13 +35,13 @@ table_to_list() {
     local file="$1"
     local section="$2"
 
-    sed -n "/^## ${section}/,/^---/p" "$file" \
+    sed -n -E "/^## ${section}|<summary>.*${section}/,/^---|^<\/details>/p" "$file" \
         | grep '^|' \
         | tail -n +3 \
         | while IFS='|' read -r _ num rp budget priority status _rest; do
             num=$(echo "$num" | xargs)
             rp=$(echo "$rp" | xargs | sed 's/\*\*//g')
-            budget=$(echo "$budget" | xargs)
+            budget=$(echo "$budget" | xargs | sed 's/\*\*//g')
             status=$(echo "$status" | xargs)
 
             local icon="⬜"
@@ -62,9 +62,15 @@ get_github_link() {
     local repo_url
     repo_url=$(cd "$STRATEGY_REPO_DIR" && git remote get-url origin 2>/dev/null | sed 's/\.git$//' | sed 's|git@github.com:|https://github.com/|')
     if [ -n "$repo_url" ]; then
+        local branch
+        branch=$(cd "$STRATEGY_REPO_DIR" && git rev-parse --abbrev-ref HEAD 2>/dev/null)
+        if [ -z "$branch" ]; then
+            echo "ERROR: unable to determine git branch for $STRATEGY_REPO_DIR" >&2
+            return 1
+        fi
         local encoded_name
         encoded_name=$(printf '%s' "$filename" | python3 -c 'import sys,urllib.parse; print(urllib.parse.quote(sys.stdin.read().strip()))')
-        printf '\n\n<a href="%s/blob/main/current/%s">📄 Открыть в GitHub</a>' "$repo_url" "$encoded_name"
+        printf '\n\n<a href="%s/blob/%s/current/%s">📄 Открыть в GitHub</a>' "$repo_url" "$branch" "$encoded_name"
     fi
 }
 

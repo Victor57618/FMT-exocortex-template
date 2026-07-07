@@ -1,7 +1,18 @@
 #!/bin/bash
-# scheduler.sh — центральный диспетчер агентов экзокортекса
+# scheduler.sh — ⚠️ LEGACY (отключён 10 марта 2026)
 #
-# Вызывается launchd (com.exocortex.scheduler) в нужные моменты.
+# Архитектура мигрировала с монолитного scheduler.sh на per-role launchd агенты:
+#   com.strategist.{morning,notereview,weekreview}
+#   com.exocortex.pomodoro-alert
+#   com.iwe.rule-classifier
+#   com.aisystant.profiler.recalculate
+#   com.pulse.{alerts,weekly}
+#   com.claude.env
+#
+# Plist `com.exocortex.scheduler.plist.disabled` в ~/Library/LaunchAgents/.
+# Скрипт оставлен для возможного ручного запуска (`scheduler.sh dispatch|status`),
+# но автоматически не запускается. Для нового кода — использовать per-role plists.
+#
 # Состояние: ~/.local/state/exocortex/ (маркеры запуска)
 #
 # Использование:
@@ -44,7 +55,9 @@ if [ -z "${IWE_TEMPLATE:-}" ]; then
     echo "[$(date '+%H:%M:%S')] WARN: \$IWE_TEMPLATE не задана, scheduler использует fallback $HOME/IWE/FMT-exocortex-template. source ~/.zshenv?" >&2
 fi
 ROLES_DIR="$ROLES_DIR_RUNTIME"  # backward-compat alias для downstream-логики
-# notify.sh — read-only, не substituted
+# notify.sh — read-only, не substituted (берётся из FMT, не из .iwe-runtime).
+# Поэтому notify.sh САМ резолвит шаблоны из .iwe-runtime (см. #169): иначе его
+# $SCRIPT_DIR/templates указывает на FMT-копии с неразрешёнными {{WORKSPACE_DIR}}.
 if [ -n "${IWE_TEMPLATE:-}" ] && [ -f "$IWE_TEMPLATE/roles/synchronizer/scripts/notify.sh" ]; then
     NOTIFY_SH="$IWE_TEMPLATE/roles/synchronizer/scripts/notify.sh"
 elif [ -f "$HOME/IWE/FMT-exocortex-template/roles/synchronizer/scripts/notify.sh" ]; then
@@ -147,40 +160,6 @@ cleanup_state() {
     find "$STATE_DIR" -name "*-202*" -mtime +7 -delete 2>/dev/null || true
 }
 
-# === Pre-archive: мгновенная очистка вчерашнего DayPlan (< 1 сек) ===
-# Разделяет архивацию (мгновенно) и генерацию (15+ мин Claude Code).
-# Гарантирует: даже если генерация ещё не началась, старый план не висит в current/.
-pre_archive_dayplan() {
-    local strategy_dir="{{WORKSPACE_DIR}}/{{GOVERNANCE_REPO}}"
-    local archive_dir="$strategy_dir/archive/day-plans"
-    local moved=0
-
-    mkdir -p "$archive_dir"
-
-    for dayplan in "$strategy_dir/current"/DayPlan\ 20*.md; do
-        [ -f "$dayplan" ] || continue
-        local fname
-        fname=$(basename "$dayplan")
-        # Пропускаем сегодняшний план
-        if [[ "$fname" == *"$DATE"* ]]; then continue; fi
-        # Архивируем вчерашний (и любой более старый)
-        git -C "$strategy_dir" mv "$dayplan" "$archive_dir/" 2>/dev/null || mv "$dayplan" "$archive_dir/"
-        moved=$((moved + 1))
-        log "pre-archive: moved $fname → archive/day-plans/"
-    done
-
-    if [ "$moved" -gt 0 ]; then
-        git -C "$strategy_dir" pull --rebase 2>/dev/null || true
-        # ВАЖНО: добавляем ТОЛЬКО перемещённые файлы, не всю директорию.
-        # `git add current/` может подхватить грязные unstaged файлы (баг 21 мар 2026).
-        git -C "$strategy_dir" add -- archive/day-plans/ 2>/dev/null || true
-        git -C "$strategy_dir" add -u -- current/ 2>/dev/null || true
-        git -C "$strategy_dir" commit -m "chore: archive $moved old DayPlan(s)" 2>/dev/null || true
-        git -C "$strategy_dir" push 2>/dev/null || true
-        log "pre-archive: committed and pushed ($moved file(s))"
-    fi
-}
-
 # === Диспетчер ===
 
 dispatch() {
@@ -203,9 +182,6 @@ dispatch() {
 
     log "dispatch started (hour=$HOUR, dow=$DOW)"
     local ran=0
-
-    # --- Pre-archive: убрать вчерашний DayPlan ДО генерации нового ---
-    pre_archive_dayplan
 
     # --- AC sleep check (macOS): на зарядке Mac не должен засыпать ---
     if [[ "$(uname)" == "Darwin" ]] && ! ran_today "pmset-check"; then

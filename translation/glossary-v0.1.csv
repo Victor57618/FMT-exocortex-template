@@ -1,0 +1,127 @@
+term_ru,term_en,context,notes,tier
+3 контекста стиля жизни,Three Lifestyle Development Contexts,personal development model,learning beyond formal education; pending_review=true,3
+Dual-mode setup script,Dual-mode setup script,Environment configuration,SETUP_CI flag support; pending_review=true,3
+Headless-адаптер,Headless adapter,Agent inbox runtime,IWE dispatcher implementation; pending_review=true,3
+bearer-заголовок как третий auth-mode,Bearer Header Authentication Mode,authentication protocol extension,backward-compatible multi-channel auth; pending_review=true,3
+Авто-триггер субагент-ревью,Auto-trigger sub-agent review,CI section creation,IWE-specific automation; pending_review=true,3
+Агрегат,Aggregate,DDD tactical patterns,Core DDD term,2
+Адаптер Claude Code,Claude Code adapter,Reference implementation,IWE component mapping; pending_review=true,3
+Антикоррупционный слой,Anti-Corruption Layer,DDD integration patterns,Abbrev. ACL common,2
+Артефакт,Artifact,systems engineering deliverable or output,"Also spelled ""artefact"" (British)",2
+Архитектура,Architecture,system and software design structure,Standard SE/DDD term,2
+Атрофия мышления при ежедневной работе с ИИ,Cognitive Atrophy With Daily AI Use,professional development risk,IWE-specific cognitive concern; pending_review=true,3
+Аудит,Audit,Audit process,,1
+Блокирующее правило,Blocking rule,Mandatory rule,,1
+Бэклог,Backlog,agile product/sprint planning,straightforward,2
+Верификация,Verification,QA and requirements validation,distinct from Validation,2
+Веха,Milestone,marking key project checkpoint,standard PM term,2
+Диагностика устаревания ЦД,Digital twin staleness diagnosis,State verification,IWE-specific freshness check; pending_review=true,3
+Дисциплина,Discipline,Engineering methodology / IWE,Standard methodology term,2
+Дисциплинированный,Disciplined,describing rigorous engineering practice,adj; also rigorous in some contexts,2
+Дорожная карта,Roadmap,strategic planning timeline document,compound noun; no hyphen preferred,2
+Заинтересованная сторона,Stakeholder,requirements and systems engineering,Standard SE/BABOK term,2
+Закрытие,Closing,ORZ Closing phase,,1
+Замена терминологии,Multi-pass terminology replacement,Semantic consistency,IWE-specific peer verification; pending_review=true,3
+Знание,Knowledge,learning and knowledge management,cognitive domain,2
+Интеграция,Integration,system or service integration,straightforward,2
+Интерфейс,Interface,system boundary and integration design,Standard technical term,2
+Инфраструктура,Infrastructure,deployment and operational environment,Standard DevOps/SE term,2
+Инцидент,Incident,unplanned event disrupting service,ITIL/SRE standard term,2
+Исполнитель роли,Role Performer,IWE / organizational modeling,Also Actor in some frameworks,2
+Итерация,Iteration,agile development cycle unit,standard agile term,2
+Карта контекстов,Context Map,DDD strategic design,Core DDD term,2
+Карта роста созидателя,Creator Growth Map,professional development framework,3×2 matrix plus contextual factors; pending_review=true,3
+Карточки практик саморазвития,Self-Development Practice Cards,professional development framework,8 practices × 4 mastery levels; pending_review=true,3
+Компетенция,Competency,HR and capability frameworks,broader than Skill,2
+Компонент,Component,system decomposition and design,Standard SysML/UML term,2
+Конвейер,Pipeline,Automated pipeline,,1
+Контракт хоста для IWE,Host contract,Platform requirements layer,IWE-specific interface spec; pending_review=true,3
+Контур IWE,IWE perimeter,Pilot control boundary,IWE-specific control zone; pending_review=true,3
+Конфигурация,Configuration,system or application settings,straightforward,2
+Концепция,Concept,conceptual modeling and domain design,"Not ""conception""; avoid ambiguity",2
+Культура безопасности пилота,Pilot security culture,Data protection habits,IWE-specific practice framework; pending_review=true,3
+Манифест,Manifest,deployment or package declaration files,e.g. Kubernetes manifest,2
+Мастерство,Mastery,competency and skill development models,implies high-level expertise,2
+Матрица нормативных состояний по ступеням,Normative State Matrix By Level,maturity framework definition,target state specification; pending_review=true,3
+Машина IWE,IWE machine,Infrastructure substrate,IWE-specific platform instance; pending_review=true,3
+Метод,Method,Engineering practice / methodology,General term; context-dependent,2
+Миграция,Migration,data or schema migration processes,straightforward,2
+Модуль,Module,software and system decomposition,Slightly lower-level than component,2
+Мониторинг,Monitoring,observing system health and metrics,standard SRE/ops term,2
+Наблюдаемость,Observability,measuring system internal state externally,SRE term; logs+metrics+traces,2
+Навык,Skill,individual capability or ability,narrower than Competency,2
+Надсистема,Supersystem,Systems engineering / IWE,Also Wider System; uncertain mapping,2
+Напарник,Peer partner,Peer agent in DP.SC.154,,1
+Область знаний,Knowledge Domain,DDD bounded context and ontology design,"Also ""Body of Knowledge"" in standards",2
+Общий язык,Ubiquitous Language,DDD strategic design,Not Universal Language,2
+Ограничение,Constraint,design and requirements engineering,"Also ""limitation"" in some contexts",2
+Ограниченный контекст,Bounded Context,DDD strategic design,Core DDD term,2
+Онбординг платформы — зонтичное обещание,Platform Onboarding Umbrella Promise,platform adoption framework,two-axis maturation model; pending_review=true,3
+Онтология,Ontology,formal knowledge representation model,Used in semantic/conceptual modeling,2
+Операция,Operation,unit of work or system action,"context-dependent; also ""procedure""",2
+Опыт,Experience,practitioner background and expertise,also can mean experiment in sci context,2
+Открытие,Opening,ORZ Opening phase,,1
+Оценка,Assessment,evaluating system or process state,"also ""estimation"" in planning contexts",2
+Пак,Pack,Knowledge pack,,1
+Память,Memory,Event sourcing pattern,Observed events + derived aggregates; pending_review=true,3
+Персона,Persona,Digital twin decomposition,IWE-specific declarative model; pending_review=true,3
+Платформа,Platform,technology stack and deployment context,Standard technical term,2
+Подсистема,Subsystem,Systems engineering decomposition,Standard universal term,2
+Понимание,Understanding,learning outcomes and comprehension,deeper than Knowledge,2
+Постмортем,Postmortem,analysis after incident or failure,"also ""post-incident review""",2
+Поток,Flow/Stream,Learning or work stream,,1
+Потребность,Need,stakeholder needs before requirements,"Distinct from ""requirement""; higher level",2
+Практика,Practice,Engineering methodology / IWE,Standard methodology term,2
+Практикующий,Practitioner,domain expert in active practice,e.g. DDD practitioner,2
+Предметная область,Domain,DDD modeling and design,Core DDD term,2
+Принцип BYOB,BYOB principle,Infrastructure ownership,Bring Your Own Base; pending_review=true,3
+Приоритет,Priority,task/backlog item ordering,straightforward,2
+Проактивный,Proactive,describing anticipatory risk management,adj; widely adopted as-is,2
+Прогресс,Progress,tracking advancement toward goals,universal term,2
+Проекция,Projection,Runtime compilation,IWE-specific runtime adaptation; pending_review=true,3
+Протокол,Protocol,communication and integration design,Standard networking/SE term,2
+Профиль,Profile,describing characteristic configuration or pattern,"context-dependent; also ""baseline""",2
+Рабочий продукт,Work Product,WP abbreviation retained,,1
+Рабочий ход,Work turn,Turn in peer session,,1
+Развёртывание,Deployment,releasing software to environment,straightforward,2
+Различение,Distinction,Key conceptual distinction,,1
+Различение: Персона / Память / Контекст,Distinction: Persona/Memory/Context,Ontological decomposition,IWE-specific framework; pending_review=true,3
+Ревью,Review,code review or document review,informal borrowing from English,2
+Реестр,Registry,centralized repository or catalog,"Not ""register""; context-dependent",2
+Резервная копия,Backup,Data persistence method,IWE-specific critical data; pending_review=true,3
+Репозиторий,Repository,DDD tactical patterns,Core DDD term,2
+Ретроспектива,Retrospective,agile ceremony after iteration ends,standard Scrum ceremony,2
+Рефакторинг,Refactoring,code restructuring without behavior change,straightforward,2
+Ролевая траектория созидателя,Creator Role Trajectory Model,professional development path,five-role progression framework; pending_review=true,3
+Ролевой префикс,Role prefix,Role activation prefix,,1
+Роль,Role,IWE / organizational modeling,Context-dependent term,2
+Рубеж работы,Work milestone,Decision point in workflow,,1
+Семантика-сначала,Semantics-first integration,Layered runtime integration,IWE-specific sequencing priority; pending_review=true,3
+Сервис,Service,SOA DDD and microservices design,Standard DDD/SOA term,2
+Сервис предметной области,Domain Service,DDD tactical patterns,Distinct from Application Service,2
+Сессия,Session,runtime interaction and state management,Standard software/networking term,2
+Систематический,Systematic,describing methodical process approach,adj; methodical/structured also valid,2
+Системное мышление,Systems Thinking,Systems engineering / IWE,Discipline/methodology term,2
+Скилл,Skill,Agent skill/capability,,1
+Скрипт,Script,automation or build scripting,straightforward,2
+Слот exocortex/CLAUDE.md,Exocortex slot,Workspace backup location,IWE-specific governance separation; pending_review=true,3
+Событие предметной области,Domain Event,DDD tactical patterns / event-driven,Core DDD term,2
+Совместимость нескольких драйверов БД через duck-typing коннекта,Database Driver Compatibility Duck Typing,database abstraction layer,heterogeneous environment support; pending_review=true,3
+Созидатель,Creator,Person building value in IWE,core term,1
+Состояние гонки в диспетчере,Dispatcher race condition,Git reset after agent work,IWE-specific headless dispatch; pending_review=true,3
+Спринт,Sprint,time-boxed agile development cycle,Scrum-specific term,2
+Среда,Environment,IWE working environment,,1
+Ступень мастерства,Mastery stage,cp-profile level 1-5,,1
+Траектория,Trajectory,describing path of system or project evolution,"also ""path"" in some contexts",2
+Траектория развития,Development Trajectory,describing planned growth or evolution path,"also ""growth path"" or ""roadmap""",2
+Требование,Requirement,systems and software requirements,Core SE/SysML/INCOSE term,2
+Уровни деятельностного охвата созидателя,Creator Activity Scope Levels,professional development scale,system mastery scale; pending_review=true,3
+Фабрика,Factory,DDD tactical patterns / creational patterns,Can also be Abstract Factory,2
+Фаза,Phase,project lifecycle and process modeling,Standard PM/SE lifecycle term,2
+Форматирование,Formatting,Document formatting,,1
+Функциональное место,Functional Position,IWE / organizational design,uncertain,2
+Хук,Hook,event-driven or lifecycle callbacks,e.g. Git hooks or framework hooks,2
+Целевая система,System of Interest,Systems engineering / IWE,Also Target System in some texts,2
+Шаблон,Template,document or code generation patterns,also means Pattern in some contexts,2
+Шаг,Step,process workflow and procedure design,"Also ""stage"" depending on context",2
+Шифрование,Encryption,Data protection method,Standard security technique; pending_review=true,3

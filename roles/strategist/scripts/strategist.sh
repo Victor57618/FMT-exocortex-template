@@ -4,6 +4,13 @@
 
 set -e
 
+# Load canonical path variables if launchd/systemd did not inject them.
+# This makes the runner self-contained when invoked outside a fully-sourced shell.
+if [ -f "$HOME/.iwe-paths" ]; then
+    # shellcheck source=/dev/null
+    . "$HOME/.iwe-paths"
+fi
+
 # Предотвращаем сон: -i (idle, работает на батарее) -d (display) -u (user activity)
 # Флаг -s (system sleep) не используем — он НЕ работает на батарее (OBC может переключить профиль)
 # Linux: caffeinate отсутствует — guard через command -v (на Linux достаточно, что cron/systemd сам управляет sleep)
@@ -16,8 +23,25 @@ command -v caffeinate >/dev/null 2>&1 && caffeinate -diu -w $$ &
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_DIR="$(dirname "$SCRIPT_DIR")"
 # WP-273 0.29.4 R6.1 fix: было хардкоженое имя governance-репо.
-# Теперь подставляются плейсхолдеры из .exocortex.env через build-runtime.
-WORKSPACE="{{WORKSPACE_DIR}}/{{GOVERNANCE_REPO}}"
+# На Mac: build-runtime подставляет плейсхолдеры в .iwe-runtime/strategist.sh.
+# На сервере (без build-runtime): резолвится через env vars с fallback.
+# IWE_WORKSPACE / IWE_GOVERNANCE_REPO задаются в /etc/iwe/env или ~/.config/aist/env.
+WORKSPACE="${IWE_WORKSPACE:-$HOME/IWE}/${IWE_GOVERNANCE_REPO:-DS-strategy}"
+
+# issue #17: load NOTIFY_SH_PATH from params.yaml if not already set in environment
+if [ -z "${NOTIFY_SH_PATH:-}" ]; then
+    _params="${IWE_WORKSPACE:-$HOME/IWE}/params.yaml"
+    if [ -f "$_params" ]; then
+        _notify_val=$(grep -E '^notify_sh_path:' "$_params" | sed 's/^notify_sh_path:[[:space:]]*//;s/^"//;s/"$//;s/^'"'"'//;s/'"'"'$//' | tr -d '[:space:]')
+        [ -n "$_notify_val" ] && export NOTIFY_SH_PATH="$_notify_val"
+    fi
+fi
+
+# Guard: IWE_GOVERNANCE_REPO mismatch (Claude peer-review, 2026-05-26)
+EXPECTED_GOV=$(grep 'IWE_GOVERNANCE_REPO=' "$HOME/.iwe-paths" 2>/dev/null | sed 's/.*="//;s/"$//' || echo "DS-strategy")
+if [ "${IWE_GOVERNANCE_REPO:-}" ] && [ "$IWE_GOVERNANCE_REPO" != "$EXPECTED_GOV" ]; then
+    echo "WARN: IWE_GOVERNANCE_REPO=$IWE_GOVERNANCE_REPO, expected $EXPECTED_GOV (from ~/.iwe-paths)" >&2
+fi
 
 # PROMPTS_DIR резолв: $IWE_TEMPLATE (Generated runtime) → $HOME/IWE/FMT-exocortex-template (default) → relative (legacy fallback)
 if [ -n "${IWE_TEMPLATE:-}" ] && [ -d "$IWE_TEMPLATE/roles/strategist/prompts" ]; then
@@ -33,7 +57,16 @@ else
 fi
 
 LOG_DIR="$HOME/logs/strategist"
-CLAUDE_PATH="{{CLAUDE_PATH}}"
+# На Mac: build-runtime подставляет {{CLAUDE_PATH}}. На сервере — резолв через env/PATH/known paths.
+if [ -n "${CLAUDE_CLI_PATH:-}" ]; then
+    CLAUDE_PATH="$CLAUDE_CLI_PATH"
+elif command -v claude &>/dev/null; then
+    CLAUDE_PATH="$(command -v claude)"
+elif [ -x "$HOME/.npm-global/bin/claude" ]; then
+    CLAUDE_PATH="$HOME/.npm-global/bin/claude"
+else
+    CLAUDE_PATH="{{CLAUDE_PATH}}"  # fallback: build-runtime должен был подставить
+fi
 CLAUDE_TIMEOUT=1800  # 30 мин — защита от зависания Claude CLI
 
 # macOS не имеет GNU timeout — используем perl fallback
@@ -75,7 +108,14 @@ log() {
 notify() {
     local title="$1"
     local message="$2"
-    printf 'display notification "%s" with title "%s"' "$message" "$title" | osascript 2>/dev/null || true
+    # issue #17: NOTIFY_SH_PATH override for Linux/Docker (set in params.yaml or .exocortex.env)
+    if [ -n "${NOTIFY_SH_PATH:-}" ] && [ -x "$NOTIFY_SH_PATH" ]; then
+        "$NOTIFY_SH_PATH" "$title" "$message" 2>/dev/null || true
+    else
+        printf 'display notification "%s" with title "%s"' "$message" "$title" | osascript 2>/dev/null \
+            || notify-send "$title" "$message" 2>/dev/null \
+            || true
+    fi
 }
 
 notify_telegram() {
@@ -94,10 +134,22 @@ notify_telegram() {
 
 run_claude() {
     local command_file="$1"
+    # Опциональная модель: второй аргумент или IWE_STRATEGIST_MODEL из env.
+    # Приоритет: аргумент > env > пустая строка (дефолт Claude CLI).
+    local model_override="${2:-${IWE_STRATEGIST_MODEL:-}}"
     local command_path="$PROMPTS_DIR/$command_file.md"
 
     if [ ! -f "$command_path" ]; then
         log "ERROR: Command file not found: $command_path"
+        log "  PROMPTS_DIR=$PROMPTS_DIR"
+        log "  IWE_TEMPLATE=${IWE_TEMPLATE:-<not set>}"
+        log "  HOME=$HOME"
+        log "  Available prompts:"
+        if [ -d "$PROMPTS_DIR" ]; then
+            ls -1 "$PROMPTS_DIR" >> "$LOG_FILE" 2>&1 || true
+        else
+            log "  (directory does not exist)"
+        fi
         exit 1
     fi
 
@@ -118,15 +170,14 @@ run_claude() {
         "$command_path")
 
     # Inject current date + day of week (prevents LLM calendar arithmetic errors)
-    # Bash-only Russian date (replaces python3 dependency — not available on all platforms)
     local ru_date_context
-    local _month_num=$(( 10#$(date +%m) ))
-    local _day_num=$(( 10#$(date +%d) ))
-    local _dow_num=$(( 10#$(date +%u) ))
-    local _year=$(date +%Y)
-    local _months=( '' января февраля марта апреля мая июня июля августа сентября октября ноября декабря )
-    local _days=( '' Понедельник Вторник Среда Четверг Пятница Суббота Воскресенье )
-    ru_date_context="${_day_num} ${_months[$_month_num]} ${_year}, ${_days[$_dow_num]}"
+    ru_date_context=$(python3 -c "
+import datetime
+days = ['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье']
+months = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря']
+d = datetime.date.today()
+print(f'{d.day} {months[d.month-1]} {d.year}, {days[d.weekday()]}')
+")
     prompt="[Системный контекст] Сегодня: ${ru_date_context}. ISO: ${DATE}. День недели №${DAY_OF_WEEK} (1=Пн..7=Вс). ЯЗЫК: отвечай ТОЛЬКО на русском. Украинский, английский и другие языки запрещены.
 
 ${prompt}"
@@ -139,9 +190,15 @@ ${prompt}"
 
     # Запуск Claude Code с содержимым команды как промпт (с timeout-защитой)
     local rc=0
+    local model_args=()
+    if [ -n "$model_override" ]; then
+        model_args=(--model "$model_override")
+        log "Model override: $model_override"
+    fi
     # NB: --dangerously-skip-permissions не используется — Claude Code блокирует флаг
     # под root/sudo (Linux cron). --allowedTools задаёт явный whitelist, чего достаточно.
     timeout "$CLAUDE_TIMEOUT" "$CLAUDE_PATH" \
+        "${model_args[@]}" \
         --allowedTools "Read,Write,Edit,Glob,Grep,Bash" \
         -p "$prompt" \
         >> "$LOG_FILE" 2>&1 || rc=$?
@@ -210,7 +267,9 @@ acquire_lock() {
 
 # Читаем strategy_day из конфига (L4 Personal)
 RHYTHM_CONFIG="$HOME/.claude/projects/-Users-$(whoami)-IWE/memory/day-rhythm-config.yaml"
+WEEK_CLOSE_DAY_NAME=$(grep 'week_close_day:' "$RHYTHM_CONFIG" 2>/dev/null | awk '{print $2}' || true)
 STRATEGY_DAY_NAME=$(grep 'strategy_day:' "$RHYTHM_CONFIG" 2>/dev/null | awk '{print $2}' || echo "monday")
+STRATEGY_DAY_NAME="${WEEK_CLOSE_DAY_NAME:-$STRATEGY_DAY_NAME}"
 # Конвертируем имя дня в номер (1=Mon..7=Sun)
 case "$STRATEGY_DAY_NAME" in
     monday)    STRATEGY_DAY_NUM=1 ;;
@@ -242,11 +301,11 @@ case "$1" in
 
         if [ "$DAY_OF_WEEK" -eq "$STRATEGY_DAY_NUM" ]; then
             log "Strategy day ($STRATEGY_DAY_NAME): running session prep"
-            run_claude "session-prep"
+            run_claude "session-prep" "claude-sonnet-4-6"
             notify_telegram "session-prep"
         else
             log "Morning: running day plan"
-            run_claude "day-plan"
+            run_claude "day-plan" "claude-sonnet-4-6"
             notify_telegram "day-plan"
         fi
         ;;
@@ -262,7 +321,7 @@ case "$1" in
             exit 0
         fi
         log "Sunday: running week review"
-        run_claude "week-review"
+        run_claude "week-review" "claude-opus-4-7"
         # Fallback push for Knowledge Index (week-review creates a post there)
         # KI_REPO may not exist for all users — guard with [ -d ]
         KI_REPO="$HOME/IWE/DS-Knowledge-Index"
@@ -273,12 +332,12 @@ case "$1" in
         ;;
     "session-prep")
         log "Manual: running session prep"
-        run_claude "session-prep"
+        run_claude "session-prep" "claude-sonnet-4-6"
         notify_telegram "session-prep"
         ;;
     "day-plan")
         log "Manual: running day plan"
-        run_claude "day-plan"
+        run_claude "day-plan" "claude-sonnet-4-6"
         notify_telegram "day-plan"
         ;;
     "note-review")
@@ -292,7 +351,7 @@ case "$1" in
         BOLD_NEW_BEFORE=$(grep -vc '🔄' <(grep '^\*\*' "$FLEETING" 2>/dev/null) 2>/dev/null || true); BOLD_NEW_BEFORE=${BOLD_NEW_BEFORE:-0}
         log "Canary: $BOLD_BEFORE bold total ($BOLD_NEW_BEFORE new, $(( BOLD_BEFORE - BOLD_NEW_BEFORE )) deferred 🔄)"
 
-        run_claude "note-review"
+        run_claude "note-review" "claude-haiku-4-5-20251001"
 
         # Canary: count bold notes after (needs to be visible for alert at line ~274)
         BOLD_AFTER=$(grep -c '^\*\*' "$FLEETING" 2>/dev/null || true); BOLD_AFTER=${BOLD_AFTER:-0}
@@ -339,7 +398,7 @@ case "$1" in
         ;;
     "day-close")
         log "Manual: running day close"
-        run_claude "day-close"
+        run_claude "day-close" "claude-sonnet-4-6"
         notify_telegram "day-close"
         ;;
     "strategy-session")

@@ -3,7 +3,8 @@
 # Agent reads this file at Day Open and during Day Work.
 
 day_open:
-  strategy_day: monday          # Day for strategizing session (monday..sunday)
+  week_close_day: sunday
+  strategy_day: sunday          # Day for strategizing session (monday..sunday)
   self_dev_slot: 1              # Slot number for self-development (always first by default)
   self_dev_missing_alert: true  # Explicitly say if no self-dev in today's plan
   interactive: false            # false = Day Open одним блоком. true = промежуточные вопросы.

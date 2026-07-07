@@ -67,6 +67,100 @@ if [ -n "$STAGED_RELEASE_FILES" ]; then
     fi
 fi
 
+# === Promote script dry-run smoke (PD-2, WP-347) ===
+# Корень бага (20 мая): settings-promote.sh ломался на pre-existing debt в env -i —
+# найдено Kimi-агентом после того как автор не заметил в авторском env.
+# Гейт: при staged promote-скриптах запускаем сам promote с фикстурой в env -i.
+STAGED_PROMOTE=$(git diff --cached --name-only --diff-filter=ACM 2>/dev/null \
+    | grep -E '^scripts/(settings|hook|script|skill)-promote\.sh$' || true)
+if [ -n "$STAGED_PROMOTE" ] && [ -d "setup/promote-fixtures" ]; then
+    FAIL=0
+    for promote in $STAGED_PROMOTE; do
+        case "$(basename "$promote")" in
+            script-promote.sh)
+                CMD="bash scripts/script-promote.sh setup/promote-fixtures/sample-script.sh --dry-run"
+                ;;
+            hook-promote.sh)
+                CMD="bash scripts/hook-promote.sh setup/promote-fixtures/sample-hook.sh --dry-run"
+                ;;
+            settings-promote.sh)
+                CMD="bash scripts/settings-promote.sh sample-hook.sh PreToolUse --matcher Bash --dry-run"
+                ;;
+            skill-promote.sh)
+                CMD="bash scripts/skill-promote.sh setup/promote-fixtures/sample-skill --dry-run"
+                ;;
+        esac
+        if ! env -i HOME="$HOME" PATH="$PATH" $CMD >/tmp/iwe-promote-dryrun.$$ 2>&1; then
+            echo "PROMOTE-DRY-RUN: $promote FAIL"
+            cat /tmp/iwe-promote-dryrun.$$
+            rm -f /tmp/iwe-promote-dryrun.$$
+            FAIL=1
+        else
+            echo "PROMOTE-DRY-RUN: $promote PASS"
+            rm -f /tmp/iwe-promote-dryrun.$$
+        fi
+    done
+    if [ "$FAIL" -eq 1 ]; then
+        echo "  Override: git commit --no-verify (только если уверен)"
+        exit 1
+    fi
+fi
+
+# === Clean-env smoke for new scripts (PD-1, WP-347) ===
+# Корень: новые scripts/*.sh могут работать у автора (с авторскими env vars),
+# но падать у пользователей. Гейт: при staged НОВОМ файле scripts/*.sh —
+# прогон smoke-clean-env.sh (bash -n + safe-mode check + shebang + optional --help в env -i).
+STAGED_NEW_SCRIPTS=$(git diff --cached --name-status --diff-filter=A 2>/dev/null \
+    | awk '$2 ~ /^scripts\/.*\.sh$/ {print $2}' || true)
+if [ -n "$STAGED_NEW_SCRIPTS" ] && [ -x "scripts/smoke-clean-env.sh" ]; then
+    FAIL=0
+    for script in $STAGED_NEW_SCRIPTS; do
+        # Skip promote-скрипты (они тестируются отдельным гейтом PROMOTE-DRY-RUN)
+        case "$(basename "$script")" in
+            *-promote.sh) continue ;;
+        esac
+        if ! bash scripts/smoke-clean-env.sh "$script" >/tmp/iwe-cleanenv.$$ 2>&1; then
+            echo "CLEAN-ENV-SMOKE: $script FAIL"
+            cat /tmp/iwe-cleanenv.$$
+            rm -f /tmp/iwe-cleanenv.$$
+            FAIL=1
+        else
+            cat /tmp/iwe-cleanenv.$$
+            rm -f /tmp/iwe-cleanenv.$$
+        fi
+    done
+    if [ "$FAIL" -eq 1 ]; then
+        echo "  Override: git commit --no-verify"
+        exit 1
+    fi
+fi
+
+# === Hook paths convention (.claude/settings.json) ===
+# Корень бага (20 мая 2026): settings.json вручную скопирован в FMT с относительными
+# путями .claude/hooks/X.sh. При сдвиге cwd (subagent/worktree/MCP) хук не находится.
+# Конвенция: все хук-команды должны начинаться с $CLAUDE_PROJECT_DIR/.
+STAGED_SETTINGS=$(git diff --cached --name-only --diff-filter=ACM 2>/dev/null \
+    | grep -E '^\.claude/settings\.json$' || true)
+if [ -n "$STAGED_SETTINGS" ] && [ -x "scripts/validate-fmt-scripts.sh" ]; then
+    # FMT7 (#150): валидировать только staged-скрипты, а не весь scripts/ —
+    # иначе pre-existing долг в чужом файле блокирует регистрацию нового хука.
+    STAGED_SCRIPTS=$(git diff --cached --name-only --diff-filter=ACM 2>/dev/null \
+        | grep -E '\.(sh|py)$' || true)
+    if [ -n "$STAGED_SCRIPTS" ]; then
+        # shellcheck disable=SC2086
+        if ! bash scripts/validate-fmt-scripts.sh --files $STAGED_SCRIPTS >/tmp/iwe-settings-validate.$$ 2>&1; then
+            echo "HOOK-PATH-CONVENTION: FAIL"
+            cat /tmp/iwe-settings-validate.$$
+            rm -f /tmp/iwe-settings-validate.$$
+            echo ""
+            echo "  Используй settings-promote.sh для регистрации новых хуков."
+            echo "  Override: git commit --no-verify"
+            exit 1
+        fi
+        rm -f /tmp/iwe-settings-validate.$$
+    fi
+fi
+
 # === Template validation (author-specific leaks, hardcoded paths, hooks cross-ref) ===
 # Корень бага (26 апр): литерал `DS-my-strategy` попал в новый
 # templates/strategy-skeleton/README.md (commit cb22aaa); валидатор зовётся
@@ -77,8 +171,21 @@ fi
 # коммиты пропускали проверку и пускали leak в FMT.
 STAGED_TEMPLATE=$(git diff --cached --name-only --diff-filter=ACM 2>/dev/null \
     | grep -E '\.(md|sh|py|json|plist|yaml)$' || true)
+# Bootstrap TEMPLATE_DIR from .exocortex.env (parent of this repo) — no env var required
+if [ -z "${TEMPLATE_DIR:-}" ]; then
+  _repo_root=$(git rev-parse --show-toplevel 2>/dev/null || true)
+  _env_file="$(dirname "${_repo_root:-}")/.exocortex.env"
+  if [ -f "$_env_file" ]; then
+    _td=$(grep '^IWE_TEMPLATE=' "$_env_file" | head -1 | cut -d= -f2-)
+    [ -n "${_td:-}" ] && export TEMPLATE_DIR="$_td"
+    unset _td
+  fi
+  unset _repo_root _env_file
+fi
 if [ -n "$STAGED_TEMPLATE" ] && [ -x "setup/validate-template.sh" ]; then
-    if ! bash setup/validate-template.sh >/tmp/iwe-validate.$$ 2>&1; then
+    # --mode=staged: проверяет только staged файлы. Предотвращает ложные блокировки
+    # от unstaged WIP параллельных агентов (мультиагентная среда IWE). CI использует pristine.
+    if ! bash setup/validate-template.sh --mode=staged ${TEMPLATE_DIR:+"$TEMPLATE_DIR"} >/tmp/iwe-validate.$$ 2>&1; then
         echo "TEMPLATE-VALIDATE: FAIL"
         cat /tmp/iwe-validate.$$
         rm -f /tmp/iwe-validate.$$
@@ -128,6 +235,26 @@ if [ -n "$STAGED_DETECTOR_SCOPE" ] && [ -x "setup/test-detectors.sh" ]; then
     rm -f /tmp/iwe-detector-tests.$$
 fi
 
+# === Manifest coverage check (MG5) ===
+# Корень бага (25 мая): orphan-скрипты (day-open-scaffold.sh, iwe-backup-check.sh,
+# route-task.sh) попали в git, но не в update-manifest.json → partial delivery.
+# Shift-left: ловим ДО коммита, а не в CI.
+STAGED_MANIFEST_SCOPE=$(git diff --cached --name-only --diff-filter=ACM 2>/dev/null \
+    | grep -E '^(scripts/|\.claude/|roles/|exocortex/|memory/|\.githooks/|pack-templates/|shared/|update-manifest\.json)' || true)
+if [ -n "$STAGED_MANIFEST_SCOPE" ] && [ -f "scripts/check-manifest-coverage.py" ]; then
+    if ! git ls-files | python3 scripts/check-manifest-coverage.py update-manifest.json >/tmp/iwe-manifest.$$ 2>&1; then
+        echo "MANIFEST-COVERAGE: FAIL"
+        cat /tmp/iwe-manifest.$$
+        rm -f /tmp/iwe-manifest.$$
+        echo ""
+        echo "  Commit blocked. Добавь orphan-файл(ы) в update-manifest.json"
+        echo "  или в excluded_paths, если намеренно исключён."
+        echo "  Override: git commit --no-verify"
+        exit 1
+    fi
+    rm -f /tmp/iwe-manifest.$$
+fi
+
 # Get list of staged .sh files
 STAGED_SH=$(git diff --cached --name-only --diff-filter=ACM -- '*.sh' 2>/dev/null)
 [ -z "$STAGED_SH" ] && exit 0
@@ -168,4 +295,18 @@ check_pattern "grep -P " "grep -P (GNU-only, use grep -E)"
 if [ "$ISSUES" -eq 1 ]; then
     echo "Commit blocked. See docs/PLATFORM-COMPAT.md for cross-platform wrappers."
     exit 1
+fi
+
+# === WP-387: diagnose-iwe rubric sync check ===
+# Ensures derived SKILL.md is in sync with YAML SoT
+if git diff --cached --name-only | grep -qE "shared/rubrics/|\.claude/skills/diagnose-iwe/"; then
+  if [ -f "scripts/generate-diagnose-iwe-skill.py" ]; then
+    python3 scripts/generate-diagnose-iwe-skill.py --check || {
+      echo ""
+      echo "RUBRIC-SYNC: diagnose-iwe/SKILL.md is out of sync with shared/rubrics/form-089.yaml"
+      echo "  Fix: python3 scripts/generate-diagnose-iwe-skill.py"
+      echo "  Then: git add shared/rubrics/form-089.yaml .claude/skills/diagnose-iwe/SKILL.md"
+      exit 1
+    }
+  fi
 fi

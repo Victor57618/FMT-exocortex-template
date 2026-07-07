@@ -1,7 +1,10 @@
 ---
 name: run-protocol
-description: Пошаговое выполнение протокола ОРЗ с обязательной отметкой каждого шага. Предотвращает пропуск шагов (включая верификацию).
+description: Step-by-step execution of the OWC protocol with mandatory checkpoint at each step. Prevents skipping steps (including verification).
 argument-hint: "[open|close] [day|session]"
+routing:
+  executor: sonnet
+  deterministic: false
 ---
 
 # Выполнение протокола

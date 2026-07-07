@@ -18,7 +18,10 @@
 set -uo pipefail
 export PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:${PATH:-}"
 
-IWE_ROOT="${IWE_ROOT:-$HOME/IWE}"
+# Load unified environment: WORKSPACE_DIR, IWE_ROOT, IWE_SCRIPTS, etc.
+LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=./iwe-env-bootstrap.sh
+source "$LIB_DIR/iwe-env-bootstrap.sh" || exit 1
 CLAUDE_DIR="$IWE_ROOT/.claude"
 CONFIG_FILE="$CLAUDE_DIR/config/capture-detectors.sh"
 LATENCY_THRESHOLD=150  # ms

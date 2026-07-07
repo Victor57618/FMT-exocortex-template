@@ -1,6 +1,6 @@
 #!/bin/bash
 # detector_incident.sh
-# see DP.SC.025 (capture-bus service clause), DP.ROLE.001#R29 (Детектор)
+# see DP.SC.025 (capture-bus service clause), DP.ROLE.001#R47 (Детектор)
 # event_type: agent_incident
 # cost_class: free (rule-based)
 # runtime: shell
@@ -23,6 +23,12 @@
 #   P9 (detector_compound_command).
 
 set -uo pipefail
+
+# Load unified environment: WORKSPACE_DIR, IWE_ROOT, IWE_SCRIPTS, etc.
+DETECTOR_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CLAUDE_DIR="$(cd "$DETECTOR_DIR/.." && pwd)"
+# shellcheck source=../lib/iwe-env-bootstrap.sh
+source "$CLAUDE_DIR/lib/iwe-env-bootstrap.sh" || exit 1
 
 INPUT=$(cat)
 

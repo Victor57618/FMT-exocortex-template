@@ -1,9 +1,13 @@
 ---
 name: extend
-description: "Каталог расширяемости IWE: что можно настроить, какие extension points существуют, какие параметры доступны, как установить чужое расширение."
+description: "IWE extensibility catalog: what can be customized, which extension points exist, which parameters are available, how to install a third-party extension."
 argument-hint: "[название протокола или пустое для полного каталога]"
 user_invocable: true
 version: 1.0.0
+routing:
+  executor: script
+  deterministic: true
+  script_path: ".claude/skills/extend/show-catalog.sh"
 ---
 
 # /extend — Каталог расширяемости IWE

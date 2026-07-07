@@ -1,7 +1,11 @@
 ---
 name: setup-wakatime
-description: Настройка WakaTime time-tracking для Claude Code и VS Code
+description: Set up WakaTime time-tracking for Claude Code and VS Code.
 user_invocable: true
+routing:
+  executor: script
+  deterministic: true
+  script_path: ".claude/skills/setup-wakatime/setup.sh"
 ---
 
 # Setup WakaTime Time Tracking

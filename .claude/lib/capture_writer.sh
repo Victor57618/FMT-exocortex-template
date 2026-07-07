@@ -1,6 +1,6 @@
 #!/bin/bash
 # capture_writer.sh
-# see DP.SC.025 (capture-bus service clause), DP.ROLE.001#R29 (Детектор)
+# see DP.SC.025 (capture-bus service clause), DP.ROLE.001#R47 (Детектор)
 # Writer: принимает JSON event из stdin, пишет в целевой репо (файл) + raw_events (если включён).
 # НЕТ fallback — если target_repo не разрешён, событие отклоняется (инвариант OwnerIntegrity).
 #
