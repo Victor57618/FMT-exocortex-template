@@ -44,7 +44,17 @@ if [ ! -f "$MANIFEST" ]; then
     exit 1
 fi
 
-# Получить mtime файла в днях от сегодня (macOS stat -f, Linux stat -c)
+# Кроссплатформенный mtime (unix epoch) одного файла.
+# macOS: stat -f %m; GNU/MINGW: stat -c %Y. Флаг -f на GNU = --file-system
+# (выдаёт данные ФС со словом "Inodes"), поэтому детектим ОС явно, а не по exit-code.
+stat_mtime() {
+    case "$(uname)" in
+        Darwin) stat -f %m "$1" 2>/dev/null ;;
+        *)      stat -c %Y "$1" 2>/dev/null ;;
+    esac
+}
+
+# Получить mtime файла в днях от сегодня
 mtime_days_ago() {
     local path="$1"
     if [ ! -e "$path" ]; then
@@ -52,11 +62,7 @@ mtime_days_ago() {
         return
     fi
     local mtime
-    if stat -f %m "$path" >/dev/null 2>&1; then
-        mtime=$(stat -f %m "$path")
-    else
-        mtime=$(stat -c %Y "$path")
-    fi
+    mtime=$(stat_mtime "$path")
     local now
     now=$(date +%s)
     echo $(( (now - mtime) / 86400 ))
@@ -69,9 +75,13 @@ dir_newest_mtime_days_ago() {
         mtime_days_ago "$dir"
         return
     fi
-    local newest
+    local newest stat_args
+    case "$(uname)" in
+        Darwin) stat_args="-f %m" ;;
+        *)      stat_args="-c %Y" ;;
+    esac
     newest=$(find "$dir" -type f -not -path '*/.git/*' -print0 2>/dev/null \
-        | xargs -0 stat -f %m 2>/dev/null \
+        | xargs -0 stat $stat_args 2>/dev/null \
         | sort -nr | head -1)
     if [ -z "${newest:-}" ]; then
         echo "-1"
