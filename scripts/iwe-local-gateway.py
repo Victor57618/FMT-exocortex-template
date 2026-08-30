@@ -20,6 +20,10 @@ else:
 
 PROTOCOL_VERSION = "2024-11-05"
 
+# MCP stdio is UTF-8 regardless of the active Windows console code page.
+sys.stdin.reconfigure(encoding="utf-8")
+sys.stdout.reconfigure(encoding="utf-8")
+
 
 def utc_timestamp() -> str:
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
