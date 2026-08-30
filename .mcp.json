@@ -4,6 +4,12 @@
     "iwe-knowledge": {
       "type": "http",
       "url": "https://mcp.aisystant.com/mcp"
+    },
+
+    "iwe-local-gateway": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["scripts/iwe-local-gateway.py", "--agent", "claude"]
     }
 
   }
