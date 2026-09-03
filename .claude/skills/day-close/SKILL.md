@@ -28,7 +28,7 @@ Day Close = протокол. Исполнять ТОЛЬКО пошагово �
 ## Алгоритм
 
 ### 0. Extensions (before)
-`bash .claude/scripts/load-extensions.sh day-close before` → exit 0: `Read` каждый файл из вывода (alphabetic) → выполнить как первые шаги. Поддерживает `extensions/day-close.before.md` И `extensions/day-close.before.<suffix>.md`.
+`powershell -NoProfile -ExecutionPolicy Bypass -File .claude/scripts/load-extensions.ps1 day-close before` (Windows) / `bash .claude/scripts/load-extensions.sh day-close before` (POSIX) → exit 0: `Read` каждый файл из вывода (alphabetic) → выполнить как первые шаги. Поддерживает `extensions/day-close.before.md` И `extensions/day-close.before.<suffix>.md`.
 
 ### 1. Сбор данных
 Запустить bash-скрипт сбора коммитов за день по всем git-репо в `{{HOME_DIR}}/IWE/`. Сопоставить с таблицей «На сегодня» из DayPlan → определить статусы.
@@ -43,7 +43,7 @@ Day Close = протокол. Исполнять ТОЛЬКО пошагово �
 **2f.** WeekReport — если есть `WeekReport W{N}.md`: добавить `<details><summary><b>Итоги {День} {Дата}</b></summary>` **перед** предыдущими итогами (обратная хронология).
 <!-- Детали 2f: day-close-details.md § Шаг 2f -->
 
-**EXTENSION POINT (checks):** `bash .claude/scripts/load-extensions.sh day-close checks` → exit 0: `Read` каждый файл → выполнить.
+**EXTENSION POINT (checks):** `powershell -NoProfile -ExecutionPolicy Bypass -File .claude/scripts/load-extensions.ps1 day-close checks` (Windows) / `bash .claude/scripts/load-extensions.sh day-close checks` (POSIX) → exit 0: `Read` каждый файл → выполнить.
 
 ### 3. Архивация
 - DayPlan сегодня → `git mv current/DayPlan $(date +%Y-%m-%d).md archive/day-plans/`. DayPlan'ы прошлых дней в `current/` (мусор) — заархивировать тоже.
@@ -91,7 +91,7 @@ WakaTime CLI (`~/.wakatime/wakatime-cli --today`) или Neon-fallback → Бю�
 ### 11. Верификация (Haiku R23)
 Sub-agent Haiku R23 (context isolation): передать чеклист + черновик итогов + список обновлённых файлов. По ❌ — исправить до показа пользователю.
 
-**EXTENSION POINT (checks):** `bash .claude/scripts/load-extensions.sh day-close checks` → exit 0: `Read` каждый файл → выполнить.
+**EXTENSION POINT (checks):** `powershell -NoProfile -ExecutionPolicy Bypass -File .claude/scripts/load-extensions.ps1 day-close checks` (Windows) / `bash .claude/scripts/load-extensions.sh day-close checks` (POSIX) → exit 0: `Read` каждый файл → выполнить.
 
 ---
 

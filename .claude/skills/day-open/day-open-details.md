@@ -8,6 +8,10 @@
 ## Шаг 0: Extensions (before)
 
 ```bash
+# Windows
+powershell -NoProfile -ExecutionPolicy Bypass -File .claude/scripts/load-extensions.ps1 day-open before
+
+# POSIX
 bash .claude/scripts/load-extensions.sh day-open before
 ```
 Exit 0 → `Read` каждый файл из вывода (alphabetic) → выполнить содержимое как первые шаги.

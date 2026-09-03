@@ -73,7 +73,7 @@ bash {{WORKSPACE_DIR}}/scripts/route-task.sh --skill <skill-name>
    ```
    Exit 0 → читать вывод. Exit 1 → РП не найден → перейти к Ритуалу с пометкой «контекст не найден». Exit 2 → ошибка парсинга → перейти к Ритуалу, поднять stderr в «Требует внимания».
 
-   **Шаг 3b — Override (опционально).** `bash .claude/scripts/load-extensions.sh protocol-open sync` — exit 0 → `Read` файлы (alphabetic), они переопределяют дефолтное поведение шага 3c. Exit 1 → дефолт.
+   **Шаг 3b — Override (опционально).** `powershell -NoProfile -ExecutionPolicy Bypass -File .claude/scripts/load-extensions.ps1 protocol-open sync` (Windows) / `bash .claude/scripts/load-extensions.sh protocol-open sync` (POSIX) — exit 0 → `Read` файлы (alphabetic), они переопределяют дефолтное поведение шага 3c. Exit 1 → дефолт.
 
    **Шаг 3c — Дефолтное поведение по веткам (если 3b не override'нул):**
    - **Ветка A — тривиальный случай** (≤1 связанных РП И drift-сигналов нет): главный агент сам читает контекст текущего РП и патчит маркеры (`[ ]` → `[x]` для подзадач, ссылающихся на закрытые связанные РП).
@@ -134,7 +134,7 @@ bash {{WORKSPACE_DIR}}/scripts/route-task.sh --skill <skill-name>
 
 **Шаг 4.5. Артефактор (автоматический).** Если класс ∈ {open-loop, problem-framing} И оценка ≥3h → выполнить `/artifactor` inline (без вопроса пользователю). Этапную карту вставить в WP context file (секция `## Этапы` в конец файла). Если класс trivial/closed-loop ИЛИ оценка <3h → пропустить молча.
 
-**EXTENSION POINT (protocol-open after):** `bash .claude/scripts/load-extensions.sh protocol-open after` — exit 0 → `Read` каждый файл из вывода (alphabetic) → выполнить. Exit 1 → пропустить. Поддерживает `extensions/protocol-open.after.md` И `extensions/protocol-open.after.<suffix>.md`.
+**EXTENSION POINT (protocol-open after):** `powershell -NoProfile -ExecutionPolicy Bypass -File .claude/scripts/load-extensions.ps1 protocol-open after` (Windows) / `bash .claude/scripts/load-extensions.sh protocol-open after` (POSIX) — exit 0 → `Read` каждый файл из вывода (alphabetic) → выполнить. Exit 1 → пропустить. Поддерживает `extensions/protocol-open.after.md` И `extensions/protocol-open.after.<suffix>.md`.
 
 > Продолжение работы над тем же РП — повторный Ритуал не нужен.
 

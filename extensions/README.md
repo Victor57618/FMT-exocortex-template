@@ -40,7 +40,7 @@ fi
 - `<hook>` — точка вставки (`before`, `after`, `checks`)
 - `<suffix>` — произвольное имя модуля (например, `health`, `linear`, `slack`)
 
-**Loader native (с 0.29.9):** все skills/protocols вызывают `bash .claude/scripts/load-extensions.sh <protocol> <hook>` и итерируют по выводу. И manifest-, и suffix-стиль работают одинаково. Manifest вручную делегирующий в suffix-файлы больше не нужен (вызовет двойное выполнение).
+**Loader native (с 0.29.9):** все skills/protocols вызывают `powershell -NoProfile -ExecutionPolicy Bypass -File .claude/scripts/load-extensions.ps1 <protocol> <hook>` (Windows) / `bash .claude/scripts/load-extensions.sh <protocol> <hook>` (POSIX) и итерируют по выводу. И manifest-, и suffix-стиль работают одинаково. Manifest вручную делегирующий в suffix-файлы больше не нужен (вызовет двойное выполнение).
 
 ### Поддерживаемые extension points
 

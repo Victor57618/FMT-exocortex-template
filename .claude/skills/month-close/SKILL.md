@@ -46,7 +46,7 @@ Month Close = протокол. Исполнять ТОЛЬКО пошагово
 ## Algorithm
 
 ### 0. Extensions (before)
-Загрузить: `bash .claude/scripts/load-extensions.sh month-close before`. Exit 0 → `Read` каждый файл из вывода (alphabetic) → выполнить как первые шаги. Exit 1 → пропустить. Поддерживает `extensions/month-close.before.md` И `extensions/month-close.before.<suffix>.md`.
+Загрузить: `powershell -NoProfile -ExecutionPolicy Bypass -File .claude/scripts/load-extensions.ps1 month-close before` (Windows) / `bash .claude/scripts/load-extensions.sh month-close before` (POSIX). Exit 0 → `Read` каждый файл из вывода (alphabetic) → выполнить как первые шаги. Exit 1 → пропустить. Поддерживает `extensions/month-close.before.md` И `extensions/month-close.before.<suffix>.md`.
 
 ### 1. Сбор данных (агент)
 
@@ -162,7 +162,7 @@ HOT-лимит превышен → понизить horizon в frontmatter ну
 4. Если фаза сдвинулась (шаг 3a) → обновить секцию «Состояние месяца — фаза стратегической позиции».
 5. Если калибр сдвинулся (шаг 3b) → обновить секцию «Калибр личности».
 
-**EXTENSION POINT (month-close after):** `bash .claude/scripts/load-extensions.sh month-close after` — exit 0 → `Read` каждый файл из вывода (alphabetic) → выполнить. Exit 1 → пропустить. Поддерживает `extensions/month-close.after.md` И `extensions/month-close.after.<suffix>.md`.
+**EXTENSION POINT (month-close after):** `powershell -NoProfile -ExecutionPolicy Bypass -File .claude/scripts/load-extensions.ps1 month-close after` (Windows) / `bash .claude/scripts/load-extensions.sh month-close after` (POSIX) — exit 0 → `Read` каждый файл из вывода (alphabetic) → выполнить. Exit 1 → пропустить. Поддерживает `extensions/month-close.after.md` И `extensions/month-close.after.<suffix>.md`.
 
 ### 10. Запись `MonthClose YYYY-MM.md`
 

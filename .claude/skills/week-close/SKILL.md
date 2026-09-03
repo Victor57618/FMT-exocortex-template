@@ -37,7 +37,7 @@ Week Close = протокол. Исполнять ТОЛЬКО пошагово 
 ## Algorithm
 
 ### 0. Extensions (before)
-Загрузить: `bash .claude/scripts/load-extensions.sh week-close before`. Exit 0 → `Read` каждый файл из вывода (alphabetic) → выполнить как первые шаги. Exit 1 → пропустить. Поддерживает `extensions/week-close.before.md` И `extensions/week-close.before.<suffix>.md`.
+Загрузить: `powershell -NoProfile -ExecutionPolicy Bypass -File .claude/scripts/load-extensions.ps1 week-close before` (Windows) / `bash .claude/scripts/load-extensions.sh week-close before` (POSIX). Exit 0 → `Read` каждый файл из вывода (alphabetic) → выполнить как первые шаги. Exit 1 → пропустить. Поддерживает `extensions/week-close.before.md` И `extensions/week-close.before.<suffix>.md`.
 
 ### 1. Сбор данных за 7 дней
 
@@ -191,7 +191,7 @@ echo "=== Hindsight log (last 20) ===" && cat ~/.iwe/hindsight.log 2>/dev/null |
 
 ### 9. Extensions (after)
 
-Загрузить: `bash .claude/scripts/load-extensions.sh week-close after`. Exit 0 → `Read` каждый файл из вывода (alphabetic) → выполнить. Exit 1 → пропустить. Поддерживает `extensions/week-close.after.md` И `extensions/week-close.after.<suffix>.md`.
+Загрузить: `powershell -NoProfile -ExecutionPolicy Bypass -File .claude/scripts/load-extensions.ps1 week-close after` (Windows) / `bash .claude/scripts/load-extensions.sh week-close after` (POSIX). Exit 0 → `Read` каждый файл из вывода (alphabetic) → выполнить. Exit 1 → пропустить. Поддерживает `extensions/week-close.after.md` И `extensions/week-close.after.<suffix>.md`.
 
 ### 10. Оценка качества недели (WP-310 Gap-А)
 

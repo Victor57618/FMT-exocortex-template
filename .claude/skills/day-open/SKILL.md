@@ -33,7 +33,7 @@ Day Open = протокол. Исполнять ТОЛЬКО пошагово ч
 ## Алгоритм
 
 ### 0. Extensions (before)
-`bash .claude/scripts/load-extensions.sh day-open before` → Exit 0: Read каждый файл, выполнить. Exit 1: пропустить.
+`powershell -NoProfile -ExecutionPolicy Bypass -File .claude/scripts/load-extensions.ps1 day-open before` (Windows) / `bash .claude/scripts/load-extensions.sh day-open before` (POSIX) → Exit 0: Read каждый файл, выполнить. Exit 1: пропустить.
 <!-- Детали: day-open-details.md § Шаг 0 -->
 
 ### 1. Вчера
@@ -92,7 +92,7 @@ Day Open = протокол. Исполнять ТОЛЬКО пошагово ч
 <!-- Детали (правила ТВС, различения): day-open-details.md § Шаг 6b2 -->
 
 ### 6c. Extensions (after)
-`bash .claude/scripts/load-extensions.sh day-open after` → Exit 0: Read каждый файл, выполнить. Exit 1: пропустить.
+`powershell -NoProfile -ExecutionPolicy Bypass -File .claude/scripts/load-extensions.ps1 day-open after` (Windows) / `bash .claude/scripts/load-extensions.sh day-open after` (POSIX) → Exit 0: Read каждый файл, выполнить. Exit 1: пропустить.
 
 ### 7. Запись
 
@@ -101,7 +101,7 @@ Day Open = протокол. Исполнять ТОЛЬКО пошагово ч
 **7a.** DayPlan: `<governance-repo>/current/DayPlan YYYY-MM-DD.md` по шаблону из `templates.md`. Предыдущий → `archive/day-plans/`.
 **7a2.** Session Log: `<governance-repo>/sessions/YYYY-MM-DD.md`. Если существует — не перезаписывать.
 <!-- Шаблон Session Log: day-open-details.md § Шаг 7a2 -->
-**7b.** `bash .claude/scripts/load-extensions.sh day-open checks` → Exit 0: выполнить верификацию. БЛОКИРУЮЩЕЕ: commit запрещён до прохождения всех checks.
+**7b.** `powershell -NoProfile -ExecutionPolicy Bypass -File .claude/scripts/load-extensions.ps1 day-open checks` (Windows) / `bash .claude/scripts/load-extensions.sh day-open checks` (POSIX) → Exit 0: выполнить верификацию. БЛОКИРУЮЩЕЕ: commit запрещён до прохождения всех checks.
 **7c.** `git commit` + `git push`.
 **7d.** Compact dashboard → вывести в VS Code по шаблону «Шаблон compact dashboard» из `templates.md`.
 

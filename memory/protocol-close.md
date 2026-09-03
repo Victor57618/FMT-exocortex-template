@@ -38,7 +38,7 @@ schema_version: 1
 
 1. **Pre-commit checks → Commit + Push**
 
-   **1a. Pre-commit checks (БЛОКИРУЮЩЕЕ).** `bash .claude/scripts/load-extensions.sh protocol-close checks` — exit 0 → `Read` каждый файл из вывода (alphabetic) → выполнить. Exit 1 → пропустить. Поддерживает `extensions/protocol-close.checks.md` И `extensions/protocol-close.checks.<suffix>.md`. **При ❌ commit запрещён** — исправить, повторить checks, только потом 1b. Семантика идентична Day/Week Close (см. `run-protocol/SKILL.md` Шаг 1b).
+   **1a. Pre-commit checks (БЛОКИРУЮЩЕЕ).** `powershell -NoProfile -ExecutionPolicy Bypass -File .claude/scripts/load-extensions.ps1 protocol-close checks` (Windows) / `bash .claude/scripts/load-extensions.sh protocol-close checks` (POSIX) — exit 0 → `Read` каждый файл из вывода (alphabetic) → выполнить. Exit 1 → пропустить. Поддерживает `extensions/protocol-close.checks.md` И `extensions/protocol-close.checks.<suffix>.md`. **При ❌ commit запрещён** — исправить, повторить checks, только потом 1b. Семантика идентична Day/Week Close (см. `run-protocol/SKILL.md` Шаг 1b).
 
    **1b. Commit + Push (БЛОКИРУЮЩЕЕ).** `git status --short` по ВСЕМ репо, которых касалась сессия (не только governance). Незафиксированные изменения → `git add <specific paths>` → commit → push. Затем убедиться что `git status` чист. Только после этого переходить к шагу 2.
 
@@ -97,7 +97,7 @@ schema_version: 1
 **РП:** #N — [название]
 **Статус:** done / in_progress
 **Git:** закоммичено + запушено ✅
-**EXTENSION POINT (protocol-close after):** `bash .claude/scripts/load-extensions.sh protocol-close after` — exit 0 → `Read` каждый файл из вывода (alphabetic) → выполнить. Exit 1 → пропустить. Поддерживает `extensions/protocol-close.after.md` И `extensions/protocol-close.after.<suffix>.md`.
+**EXTENSION POINT (protocol-close after):** `powershell -NoProfile -ExecutionPolicy Bypass -File .claude/scripts/load-extensions.ps1 protocol-close after` (Windows) / `bash .claude/scripts/load-extensions.sh protocol-close after` (POSIX) — exit 0 → `Read` каждый файл из вывода (alphabetic) → выполнить. Exit 1 → пропустить. Поддерживает `extensions/protocol-close.after.md` И `extensions/protocol-close.after.<suffix>.md`.
 **Handoff:** → WP context «Осталось» обновлён / done
 ```
 
