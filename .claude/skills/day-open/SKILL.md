@@ -15,7 +15,7 @@ routing:
 
 # Day Open (протокол открытия дня)
 
-> **Роль:** R1 Стратег. **Два выхода:** DayPlan (git, 80+ строк) + compact dashboard (VS Code, 20-30 строк).
+> **Роль:** R1 Стратег. **Два выхода:** содержательно полный DayPlan (git) + compact dashboard (VS Code, 20-30 строк). Минимальная длина DayPlan не задаётся.
 > **Порядок:** сначала DayPlan → потом compact. **Дата:** ПЕРВОЕ действие = `date`.
 > **Режим:** `memory/day-rhythm-config.yaml` → `interactive: false` = одним блоком, решения → «Требует внимания».
 > **Фильтр свежести:** issues, видео, заметки — за 2 дня. Urgent — всегда.
@@ -45,8 +45,8 @@ Day Open = протокол. Исполнять ТОЛЬКО пошагово ч
 <!-- Детали (фильтры, кэш): day-open-details.md § Шаг 1b -->
 
 ### 1c. Inbox Triage
-Разобрать `inbox/fleeting-notes.md`, `inbox/captures.md`, `inbox/extraction-reports/*.md` (pending-review). Категоризировать по PD.FORM.083. Знание доменное без маркера «Экстрактору» → таблица **Кандидаты Экстрактору** в DayPlan. Каждая заметка в DayPlan — markdown-ссылка на источник.
-<!-- Детали (гиперссылки, блокирующие правила): day-open-details.md § Шаг 1c -->
+Провести мини-триаж `inbox/fleeting-notes.md`, `inbox/captures.md`, `inbox/extraction-reports/*.md` (pending-review): вынести только действия на сегодня, срочные сигналы и кандидаты, требующие решения пилота. Полную классификацию по PD.FORM.083 выполняет Note-Review. Каждая вынесенная заметка — markdown-ссылка на источник.
+<!-- Детали (граница мини-триажа, гиперссылки): day-open-details.md § Шаг 1c -->
 
 ### 2. План на сегодня
 Приоритет: (1) carry-over из Day Close → все без обрезки; (2) WeekPlan: in_progress + pending → проверить релевантность, бюджет (Budget Spread); (3) MEMORY.md «РП текущей недели»; (4) `mandatory_daily_wps`. Слот 1 = саморазвитие.
